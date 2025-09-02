@@ -1,0 +1,30 @@
+services:
+  grafana:
+    user: root
+    container_name: 'carboncloud-carboncat-app'
+
+    build:
+      context: .
+      args:
+        grafana_image: ${GRAFANA_IMAGE:-grafana-enterprise}
+        grafana_version: ${GRAFANA_VERSION:-12.1.1}
+        development: ${DEVELOPMENT:-false}
+        anonymous_auth_enabled: ${ANONYMOUS_AUTH_ENABLED:-true}
+    ports:
+      - 3000:3000/tcp
+    volumes:
+      - ../dist:/var/lib/grafana/plugins/carboncloud-carboncat-app
+      - ../provisioning:/etc/grafana/provisioning
+      - ..:/root/carboncloud-carboncat-app
+      - ./grafana.ini:/etc/grafana/grafana.ini
+
+    environment:
+      NODE_ENV: development
+      GF_LOG_FILTERS: plugin.carboncloud-carboncat-app:debug
+      GF_LOG_LEVEL: debug
+      GF_DATAPROXY_LOGGING: 1
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: carboncloud-carboncat-app
+      GF_USERS_DEFAULT_THEME: light
+      GF_INSTALL_PLUGINS: grafana-clickhouse-datasource
+
+    network_mode: 'host'
