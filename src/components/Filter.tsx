@@ -1,27 +1,31 @@
-import React, { useState } from 'react';
+import React, {  useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown, faChevronRight, faFilter, faCircleXmark } from '@fortawesome/free-solid-svg-icons';
 import { FieldSelector } from './Components';
-import { locationService } from '@grafana/runtime';
 import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
-import { getOptionsForVariable, getValuesForVariable } from 'utils/functions';
 
 export interface FilterProps {
   field: string;
   showName: string;
   isOpen: boolean;
+  options: string[];
+  selected: string[];
+  setFunc: (value: string[]) => void;
   // onChange: (field: string) => void;
 }
 
-export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen }) => {
+export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen, options, selected, setFunc }) => {
   const theme = useTheme2();
 
-  const options = getOptionsForVariable(field);
-  const selected = getValuesForVariable(field);
+
+
+  // const options = getOptionsForVariable(field);
+  // const selected = getValuesForVariable(field);
 
   const [open, setOpen] = useState<boolean>(isOpen);
   const [selectedOptions, setSelectedOptions] = useState<string[]>(selected);
+  // const [options, setOptions] = useState<string[]>(selected);
 
   const onClick = () => {
     setOpen(!open);
@@ -30,20 +34,20 @@ export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen }) => {
   const handleFieldChange = (value: string, op?: string) => {
     if (op === 'only') {
       setSelectedOptions([value]);
-      locationService.partial({ [`var-${field}`]: [value] }, true);
+      setFunc([value])
       return;
     }
     const newSelected = selectedOptions.includes(value)
       ? selectedOptions.filter((v) => v !== value)
       : [...selectedOptions, value];
     setSelectedOptions(newSelected);
-
-    locationService.partial({ [`var-${field}`]: newSelected }, true);
+    setFunc(newSelected)
   };
 
   const resetOptions = () => {
-    setSelectedOptions(options);
-    locationService.partial({ [`var-${field}`]: ['All'] }, true);
+    setSelectedOptions([]);
+    setFunc([])
+    // locationService.partial({ [`var-${field}`]: ['All'] }, true);
   };
 
   return (

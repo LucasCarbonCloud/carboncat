@@ -1,25 +1,50 @@
 import { rangeUtil, TimeRange } from "@grafana/data";
 import { locationService } from "@grafana/runtime";
+import { Filter } from "types/filters";
 
 type PluginVars = {
   from: string;
   to: string;
   searchTerm: string;
+  filters: Filter[];
+  fields: string[];
+  labels: string[];
 };
 
 const DEFAULT_VARS: PluginVars = {
   from: "now-1h",
   to: "now",
   searchTerm: "",
+  filters: [],
+  fields:['level', 'timestamp', 'traceID', 'spanID', 'body'],
+  labels:["labels.app", "labels.component", "labels.team"],
 };
 
-export function getQVar(name: keyof PluginVars): string {
+export function getQVar<K extends keyof PluginVars>(name: K): PluginVars[K] {
   const urlParams = new URLSearchParams(window.location.search);
-  return urlParams.get(name) || DEFAULT_VARS[name];
+  const value = urlParams.get(name);
+
+  if (value === null) {
+    return DEFAULT_VARS[name];
+  }
+
+  if (name === "filters" || name === "fields" || name === "labels") {
+    try {
+      return JSON.parse(value) as PluginVars[K];
+    } catch {
+      return DEFAULT_VARS.filters as PluginVars[K];
+    }
+  }
+
+  return value as PluginVars[K];
 }
 
-export function setQVar(name: keyof PluginVars, value: string) {
-  locationService.partial({ [name]: value }, true);
+export function setQVar<K extends keyof PluginVars>(name: K, value: PluginVars[K]) {
+  if (name === "filters" || name === "fields" || name === "labels") {
+    locationService.partial({ [name]: JSON.stringify(value) }, true);
+  } else {
+    locationService.partial({ [name]: String(value) }, true);
+  }
 }
 
 export function getQVarTimeRange(): TimeRange {

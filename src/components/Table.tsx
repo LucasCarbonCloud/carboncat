@@ -5,7 +5,6 @@ import { Field } from '@grafana/data';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import dayjs from 'dayjs';
-import { getTemplateSrv } from '@grafana/runtime';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlassPlus, faMagnifyingGlassMinus, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
@@ -18,8 +17,9 @@ export interface TableProps {
   options: SimpleOptions;
   fields: Field[];
   keys: string[];
-  showLevel: boolean;
+  // showLevel: boolean;
   lineHeight: number;
+  searchTerm: string;
   setSelectedFilters: (key: string, operation: FilterOperation, value: any, op: 'add' | 'rm' | 'only') => void;
   setLogDetails: (idx: number | undefined) => void;
 }
@@ -28,7 +28,8 @@ interface CellContentProps {
   options: SimpleOptions;
   columnName: string;
   value: any;
-  displayLevel: boolean;
+  // displayLevel: boolean;
+  searchTerm: string;
   setSelectedFilters: (key: string, operation: FilterOperation, value: any, op: 'add' | 'rm' | 'only') => void;
   theme: any;
 }
@@ -37,7 +38,8 @@ const CellContent: React.FC<CellContentProps> = ({
   options,
   columnName,
   value,
-  displayLevel,
+  // displayLevel,
+  searchTerm,
   setSelectedFilters,
   theme,
 }) => {
@@ -67,16 +69,9 @@ const CellContent: React.FC<CellContentProps> = ({
       default:
         color = 'bg-gray-500';
     }
-
-    if (!displayLevel) {
-      return <div className={`w-1.5 h-6 ${color} rounded-full`} />;
-    } else {
-      return (
-        <div className={`${color} rounded-lg px-2 py-1 text-white text-xs font-bold text-center`}>{displayValue}</div>
-      );
-    }
+    return <div className={`w-1.5 h-6 ${color} rounded-full`} />;
   } else if (columnName === 'body') {
-    const searchTerm = getTemplateSrv().replace('$searchTerm');
+    // const searchTerm = getTemplateSrv().replace('$searchTerm');
     if (searchTerm !== '' && searchTerm.length > 1) {
       const partsLowerCase = value.toLowerCase().split(searchTerm.toLowerCase());
       let gIdx = 0;
@@ -243,8 +238,9 @@ export const Table: React.FC<TableProps> = ({
   options,
   fields,
   keys,
-  showLevel,
+  // showLevel,
   lineHeight,
+  searchTerm,
   setSelectedFilters,
   setLogDetails,
 }) => {
@@ -268,7 +264,7 @@ export const Table: React.FC<TableProps> = ({
       } else if (key === 'timestamp') {
         widths[key] = '180px'; // Fixed width for timestamp
       } else if (key === 'level') {
-        widths[key] = '80px'; // Fixed width for level
+        widths[key] = '10px'; // Fixed width for level
       } else if (key === 'traceID') {
         widths[key] = '200px'; // Fixed width for traceID
       } else {
@@ -376,7 +372,8 @@ export const Table: React.FC<TableProps> = ({
               options={options}
               columnName={key}
               value={value}
-              displayLevel={showLevel}
+              // displayLevel={showLevel}
+              searchTerm={searchTerm}
               setSelectedFilters={setSelectedFilters}
               theme={theme}
             />
@@ -426,7 +423,7 @@ export const Table: React.FC<TableProps> = ({
           >
             <div className="flex justify-start items-center truncate">
               {sortField === key && <span className="mr-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>}
-              <span className="truncate">{prettifyHeaderNames(key, showLevel)}</span>
+          <span className="truncate">{prettifyHeaderNames(key, false)}</span>
             </div>
           </div>
         ))}

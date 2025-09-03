@@ -56,28 +56,27 @@ export function truncateString(str: string, num: number) {
   }
 }
 
-
 export function timeAgo(timestamp: string) {
   const now = dayjs();
   const then = dayjs(timestamp);
-  const diffInSeconds = now.diff(then, "second");
+  const diffInSeconds = now.diff(then, 'second');
 
   if (diffInSeconds < 60) {
-    return `${diffInSeconds} second${diffInSeconds !== 1 ? "s" : ""} ago`;
+    return `${diffInSeconds} second${diffInSeconds !== 1 ? 's' : ''} ago`;
   }
 
-  const diffInMinutes = now.diff(then, "minute");
+  const diffInMinutes = now.diff(then, 'minute');
   if (diffInMinutes < 60) {
-    return `${diffInMinutes} minute${diffInMinutes !== 1 ? "s" : ""} ago`;
+    return `${diffInMinutes} minute${diffInMinutes !== 1 ? 's' : ''} ago`;
   }
 
-  const diffInHours = now.diff(then, "hour");
+  const diffInHours = now.diff(then, 'hour');
   if (diffInHours < 24) {
-    return `${diffInHours} hour${diffInHours !== 1 ? "s" : ""} ago`;
+    return `${diffInHours} hour${diffInHours !== 1 ? 's' : ''} ago`;
   }
 
-  const diffInDays = now.diff(then, "day");
-  return `${diffInDays} day${diffInDays !== 1 ? "s" : ""} ago`;
+  const diffInDays = now.diff(then, 'day');
+  return `${diffInDays} day${diffInDays !== 1 ? 's' : ''} ago`;
 }
 
 export function stringToDarkColor(str: string): string {
@@ -89,12 +88,12 @@ export function stringToDarkColor(str: string): string {
   }
 
   // Generate RGB values
-  const r = (hash & 0xFF) % 100; // keep low for dark
-  const g = ((hash >> 8) & 0xFF) % 100;
-  const b = ((hash >> 16) & 0xFF) % 100;
+  const r = (hash & 0xff) % 100; // keep low for dark
+  const g = ((hash >> 8) & 0xff) % 100;
+  const b = ((hash >> 16) & 0xff) % 100;
 
   // Convert to hex
-  const toHex = (n: number) => n.toString(16).padStart(2, "0");
+  const toHex = (n: number) => n.toString(16).padStart(2, '0');
   return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
@@ -114,18 +113,26 @@ export const generateFilterString = (filters: Filter[]) => {
   return outStr;
 };
 
+export function generateHLFilterString(key: string, cmps: string[]): string {
+  if ( cmps.length == 0 ) {
+    return ""
+  }
+  const formatted = `(${cmps.map(s => `'${s}'`).join(",")})`;
+  return `AND ( ${key} IN ${formatted} )`
+}
+
 export function parseFilterString(str: string): Filter[] {
   const regex = /\(\s*(.*?)\s*\)/g;
-  const matches = [...str.matchAll(regex)].map(m => m[1]);
+  const matches = [...str.matchAll(regex)].map((m) => m[1]);
 
-  const f = matches.map((fStr: string): Filter|undefined => {
-    if (fStr.includes("LogAttributes[")) {
+  const f = matches.map((fStr: string): Filter | undefined => {
+    if (fStr.includes('LogAttributes[')) {
       const regex = /LogAttributes\['([^']+)'\]\s*(=|!=)\s*'([^']+)'/;
       const match = fStr.match(regex);
 
       if (match) {
         const [, key, operator, value] = match;
-        return {key: "labels." +key, operation: operator as FilterOperation, value:value}
+        return { key: 'labels.' + key, operation: operator as FilterOperation, value: value };
       }
     } else {
       const regex = /([^']+)\s*(=|!=)\s*'([^']+)'/;
@@ -133,21 +140,21 @@ export function parseFilterString(str: string): Filter[] {
 
       if (match) {
         const [, key, operator, value] = match;
-        return {key: key, operation: operator as FilterOperation, value:value}
+        return { key: key, operation: operator as FilterOperation, value: value };
       }
     }
-    return undefined
-  })
+    return undefined;
+  });
 
-  return f.filter(function( element ) {
-     return element !== undefined;
-  })
+  return f.filter(function (element) {
+    return element !== undefined;
+  });
 }
 
 export function parseSelectedKeys(str: string): string[] {
-  return str.split(",").map((s: string) => {
-    return s.trim()
-  })
+  return str.split(',').map((s: string) => {
+    return s.trim();
+  });
 }
 
 export function getFieldNames(keys: string[], standardKeys: string[], labels: string[]): string[] {

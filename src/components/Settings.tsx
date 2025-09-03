@@ -4,6 +4,7 @@ import { Filter as FilterCmp } from './Filter';
 import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
 import { MenuItemWrapper } from './Menu';
+import { HighLevelFilter } from 'types/filters';
 
 
 export interface SettingsProps {
@@ -11,8 +12,9 @@ export interface SettingsProps {
   selectedFields: string[];
   labels: string[];
   selectedLabels: string[];
-  showLevel: boolean;
-  setShowLevel: (showLevel: boolean) => void;
+  // showLevel: boolean;
+  // setShowLevel: (showLevel: boolean) => void;
+  highLevelFilters: HighLevelFilter;
   tableLineHeight: number;
   setTableLineHeight: (value: number) => void;
   onChange: (selected: string[], changeType: string) => void;
@@ -23,8 +25,9 @@ export const Settings: React.FC<SettingsProps> = ({
   selectedFields,
   labels,
   selectedLabels,
-  showLevel,
-  setShowLevel,
+  // showLevel,
+  // setShowLevel,
+  highLevelFilters,
   tableLineHeight,
   setTableLineHeight,
   onChange,
@@ -45,9 +48,9 @@ export const Settings: React.FC<SettingsProps> = ({
     onChange(newSelected, 'field');
   };
 
-  const handleShowLevelChange = (value: string) => {
-    setShowLevel(!showLevel);
-  };
+  // const handleShowLevelChange = (value: string) => {
+  //   setShowLevel(!showLevel);
+  // };
 
   return (
     <div
@@ -68,10 +71,10 @@ export const Settings: React.FC<SettingsProps> = ({
           theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200'
         )}
       >
-        <FilterCmp field={'logLevel'} showName="Log Level" isOpen={true} />
-        <FilterCmp field={'app'} showName="app" isOpen={false} />
-        <FilterCmp field={'component'} showName="component" isOpen={false} />
-        <FilterCmp field={'team'} showName="team" isOpen={false} />
+        <FilterCmp field={'logLevel'} selected={highLevelFilters.logLevels} setFunc={highLevelFilters.setLogLevels} options={highLevelFilters.availableLogLevels} showName="Log Level" isOpen={true} />
+        <FilterCmp field={'app'} selected={highLevelFilters.apps} setFunc={highLevelFilters.setApps} options={highLevelFilters.availableApps} showName="app" isOpen={false} />
+        <FilterCmp field={'component'} selected={highLevelFilters.components} setFunc={highLevelFilters.setComponents} options={highLevelFilters.availableComponents} showName="component" isOpen={false} />
+        <FilterCmp field={'team'} selected={highLevelFilters.teams} setFunc={highLevelFilters.setTeams} options={highLevelFilters.availableTeams} showName="team" isOpen={false} />
       </div>
 
       <p
@@ -128,7 +131,6 @@ export const Settings: React.FC<SettingsProps> = ({
         </MenuItemWrapper>
 
         <MenuItemWrapper title='Settings' isOpen={false}>
-          <FieldSelector field="Show level text" isChecked={showLevel} hidden={false} onChange={handleShowLevelChange} />
           <NumberInput name="Line spacing" value={tableLineHeight} maxValue={50} minValue={10} step={1} hidden={false} onChange={setTableLineHeight}/>
         </MenuItemWrapper>
       </div>
