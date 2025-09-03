@@ -3,22 +3,11 @@ import { ClickHouseQuery } from '../types/clickhouse';
 import { getDataSourceSrv } from "@grafana/runtime";
 import { lastValueFrom, isObservable } from 'rxjs';
 
-export async function runQuery(dsName: string, setData: (data: Field[]) => void) {
+export async function runQuery(dsName: string, timeRange: TimeRange, setData: (data: Field[]) => void) {
   try {
     const ds = await getDataSourceSrv().get(
       dsName
     );
-
-    const now = dateTime();
-    const fiveMinutesAgo = now.subtract(5, 'minute');
-         const range: TimeRange = {
-      from: fiveMinutesAgo,
-      to: now,
-      raw: {
-        from: 'now-5m',
-        to: 'now',
-      } as RawTimeRange
-    };
 
     const request: DataQueryRequest<ClickHouseQuery> = {
         targets: [
@@ -33,16 +22,17 @@ export async function runQuery(dsName: string, setData: (data: Field[]) => void)
   SpanId as "spanID"
 FROM "otel_logs"
 WHERE
-  ( timestamp >= 1756819528 AND timestamp <= 1756819928 )
+  ( timestamp >= $__fromTime AND timestamp <= $__toTime )
   AND (body ILIKE '%%')
   AND level IN ('DEBUG','INFO','WARN','ERROR','FATAL')
   AND ('' = '' OR traceID = '')
 
-ORDER BY timestamp ASC LIMIT 1000`,
-            format: 0,
+ORDER BY timestamp DESC LIMIT 1000`,
+            // Logdata
+            format: 2,
           },
         ],
-        range: range,
+        range: timeRange,
         interval: '1m',
         intervalMs: 60_000,
         maxDataPoints: 1000,
