@@ -14,7 +14,8 @@ import { LogDetails } from 'components/LogDetails';
 import { Overview } from 'components/Overview';
 import { Settings } from 'components/Settings';
 import { Searchbar } from 'components/Searchbar';
-import { getQVar, getQVarTimeRange, setQVar, setQVarTimeRange } from 'utils/variables';
+import { DATASOURCES, getQVar, getQVarTimeRange, setQVar, setQVarTimeRange } from 'utils/variables';
+import ToggleButtonGroup from 'components/Components';
 
 function PageOne() {
   // const s = useStyles2(getStyles);
@@ -30,6 +31,7 @@ function PageOne() {
   const [availableTeams, setAvailableTeams] = useState<string[]>([]);
   const [teams, setTeams] = useState<string[]>([]);
 
+  const [datasource, setDatasource] = useState<string>(DATASOURCES[0].value);
 
   const [selectedLabels, setSelectedLabels] = useState<string[]>(getQVar('labels'));
   const [selectedFields, setSelectedFields] = useState<string[]>(getQVar('fields'));
@@ -42,11 +44,11 @@ function PageOne() {
   const [timeRange, setTimeRange] = useState<TimeRange>(getQVarTimeRange());
 
   useEffect(() => {
-    runLogQuery('clickhousetest', timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams, setFields);
-    runListApps('clickhousetest', timeRange, filteredSearchTerm, selectedFilters, setAvailableApps)
-    runListComponents('clickhousetest', timeRange, filteredSearchTerm, selectedFilters, apps, setAvailableComponents)
-    runListTeams('clickhousetest', timeRange, filteredSearchTerm, selectedFilters, setAvailableTeams)
-  }, [timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams])
+    runLogQuery(datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams, setFields);
+    runListApps(datasource, timeRange, filteredSearchTerm, selectedFilters, setAvailableApps)
+    runListComponents(datasource, timeRange, filteredSearchTerm, selectedFilters, apps, setAvailableComponents)
+    runListTeams(datasource, timeRange, filteredSearchTerm, selectedFilters, setAvailableTeams)
+  }, [datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams])
 
 
 
@@ -174,6 +176,11 @@ function PageOne() {
           onChange={handleSearchTermChange}
           selectedFilters={selectedFilters}
           setSelectedFilters={handleSetFilterTerm}
+        />
+        <ToggleButtonGroup
+          defaultValue= {DATASOURCES[0].value}
+          options={DATASOURCES}
+          onChange={setDatasource}
         />
         <TimeRangePicker
           value={timeRange}

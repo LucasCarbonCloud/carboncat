@@ -1,6 +1,14 @@
 import { rangeUtil, TimeRange } from "@grafana/data";
 import { locationService } from "@grafana/runtime";
 import { Filter } from "types/filters";
+import { ToggleOption } from 'types/components';
+import { faSackDollar, faServer } from '@fortawesome/free-solid-svg-icons';
+
+export const DATASOURCES: ToggleOption[] = [
+  { value: "datasource-clickhouse-apps", label: "App Logs", icon: faSackDollar },
+  { value: "datasource-clickhouse-platform", label: "Platform Logs", icon: faServer },
+];
+
 
 type PluginVars = {
   from: string;

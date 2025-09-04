@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {  faPlusCircle, faMinusCircle } from '@fortawesome/free-solid-svg-icons';
 import clsx from 'clsx';
 import { prettifyHeaderNames } from 'utils/functions';
+import { ToggleOption } from 'types/components';
 
 export interface FieldSelectorProps {
   field: string;
@@ -65,3 +66,49 @@ export const NumberInput: React.FC<NumberInputProps> = ({ name, value, maxValue,
     </div>
   );
 };
+
+interface ToggleButtonGroupProps {
+  options: ToggleOption[];
+  defaultValue?: string;
+  onChange?: (value: string) => void;
+}
+
+export default function ToggleButtonGroup({
+  options,
+  defaultValue,
+  onChange,
+}: ToggleButtonGroupProps) {
+  const [selected, setSelected] = useState(defaultValue || options[0].value);
+
+  const handleClick = (value: string, disabled?: boolean) => {
+    if (disabled) return;
+    setSelected(value);
+    onChange?.(value);
+  };
+
+return (
+    <div className="inline-flex mx-4 rounded-lg border border-gray-300">
+     {options.map((option, idx) => (
+        <div
+          key={option.value}
+          title={option.label}
+          onClick={() => handleClick(option.value, option.disabled)}
+          className={[
+            "flex items-center justify-center px-3 py-2 text-sm transition-colors",
+            "hover:bg-gray-100",
+            idx == 0 ? "rounded-l-lg" : "",
+            idx == options.length - 1 ? "rounded-r-lg" : "",
+            option.disabled ? "opacity-50 cursor-not-allowed" : "",
+            selected === option.value
+              ? "bg-gray-200 text-gray-900"
+              : "bg-white text-gray-600",
+          ].join(" ")}
+        >
+          {option.icon && (
+            <FontAwesomeIcon icon={option.icon} className="w-4 h-4" />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
