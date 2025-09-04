@@ -81,7 +81,7 @@ export default function ToggleButtonGroup({
   const [selected, setSelected] = useState(defaultValue || options[0].value);
 
   const handleClick = (value: string, disabled?: boolean) => {
-    if (disabled) return;
+    if (disabled) { return };
     setSelected(value);
     onChange?.(value);
   };
@@ -96,8 +96,8 @@ return (
           className={[
             "flex items-center justify-center px-3 py-2 text-sm transition-colors",
             "hover:bg-gray-100",
-            idx == 0 ? "rounded-l-lg" : "",
-            idx == options.length - 1 ? "rounded-r-lg" : "",
+            idx === 0 ? "rounded-l-lg" : "",
+            idx === options.length - 1 ? "rounded-r-lg" : "",
             option.disabled ? "opacity-50 cursor-not-allowed" : "",
             selected === option.value
               ? "bg-gray-200 text-gray-900"
