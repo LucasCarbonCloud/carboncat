@@ -43,18 +43,19 @@ function PageOne() {
   const [logDetails, setLogDetails] = useState<number | undefined>(undefined);
   const [timeRange, setTimeRange] = useState<TimeRange>(getQVarTimeRange());
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string|undefined>(undefined);
 
   useEffect(() => {
     setIsLoading(true);
-    console.log("load")
     Promise.all([
       runLogQuery(datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams, setFields),
       runListApps(datasource, timeRange, filteredSearchTerm, selectedFilters, setAvailableApps),
       runListComponents(datasource, timeRange, filteredSearchTerm, selectedFilters, apps, setAvailableComponents),
       runListTeams(datasource, timeRange, filteredSearchTerm, selectedFilters, setAvailableTeams)
-    ]).finally(() => {
+    ]).catch((r: any) => {
+      setErrorMessage(r.message)
+    }).finally(() => {
       setIsLoading(false);
-    console.log("stop load")
     });
   }, [datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams])
 
@@ -213,6 +214,16 @@ function PageOne() {
               theme.isDark ? 'bg-black/20' : 'bg-white/20'
             )}>
               <div className="w-12 h-12 rounded-full border-4 animate-spin border-[#28A0A6] border-t-transparent"></div>
+            </div>
+          )}
+          {errorMessage != undefined && (
+            <div className={clsx(
+              "flex absolute inset-0 z-10 justify-center items-center rounded-lg backdrop-blur-[3px]",
+              theme.isDark ? 'bg-black/20' : 'bg-white/20'
+            )}>
+              <div className="p-4 w-1/2 h-80 font-semibold text-white bg-red-700 rounded-lg shadow-md">
+                { errorMessage }
+              </div>
             </div>
           )}
         </div>

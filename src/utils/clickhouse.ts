@@ -114,7 +114,19 @@ async function runQuery(rawSql: string, dsName: string, timeRange: TimeRange): P
 
     const queryResult = ds.query(request);
     const response = isObservable(queryResult) ? await lastValueFrom(queryResult) : await queryResult;
+    
+    // Check for errors in the response
+    if (Array.isArray(response.errors) && response.errors.length > 0) {
+      const errorMessage = response.errors[0]?.message || 'Query failed';
+      throw new Error(errorMessage);
+    }
+    
     const data = response.data as DataFrame[]
+    
+    // Check if we have valid data
+    if (!data || data.length === 0) {
+      return [];
+    }
 
     return data[0]?.fields || [];
   } catch (err: any) {
