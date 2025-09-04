@@ -170,12 +170,14 @@ export const Searchbar: React.FC<SearchbarProps> = ({
       <div
         className={clsx(
           'flex px-4 rounded-l-lg ',
-          theme.isDark ? 'bg-neutral-200/20' : 'bg-neutral-200'
         )}
       >
           <FontAwesomeIcon icon={faMagnifyingGlass} />
       </div>
-      <div className={`relative w-full flex items-center bg-white rounded-r-lg`}>
+    <div className={clsx(
+      `relative w-full flex items-center rounded-r-lg`,
+       theme.isDark ? 'bg-neutral-900' : 'bg-white'
+    )}>
         {selectedFilters.length > 0 && (
           <div className={clsx(`text-xs pl-2 flex gap-1 font-bold`)}>
             {selectedFilters.map((f: Filter, idx: number) => (
@@ -204,7 +206,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
         )}
 
         <input
-          className="flex-grow p-3 bg-red-400 rounded-lg outline-none"
+          className="flex-grow p-3 rounded-lg outline-none"
           style={{ borderTopRightRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}
           type="text"
           placeholder="Filter your logs. Add filters with #key[!=/=]value#. Free text search the message."

@@ -349,8 +349,8 @@ export const Table: React.FC<TableProps> = ({
         }}
         onClick={() => setLogDetails(rowIndex)}
         className={clsx(
-          'cursor-pointer border-b-1 hover:bg-neutral-50 text-sm',
-          theme.isDark ? 'border-b-neutral-200/20 hover:bg-neutral-50/20' : 'border-b-neutral-200 hover:bg-neutral-50'
+          'cursor-pointer border-b-1 text-sm',
+          theme.isDark ? 'border-b-neutral-200/20 hover:bg-neutral-600 bg-neutral-800' : 'border-b-neutral-200 hover:bg-neutral-50'
         )}
       >
         {rowData.map((value, idx) => {
@@ -386,8 +386,8 @@ export const Table: React.FC<TableProps> = ({
   return (
     <div
       className={clsx(
-        'flex flex-col w-full h-full rounded-lg border-1 bg-white',
-        theme.isDark ? 'border-neutral-100/20' : 'border-neutral-200'
+        'flex flex-col w-full h-full rounded-lg border-1 ',
+        theme.isDark ? 'border-neutral-100/20 bg-neutral-800' : 'border-neutral-200 bg-white'
       )}
       style={{ contain: 'strict' }}
     >
