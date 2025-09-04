@@ -81,7 +81,7 @@ export async function runLogQuery(dsName: string, timeRange: TimeRange, searchTe
     ${generateHLFilterString("level", logLevels)}
     ${generateFilterString(filters)}
 
-  ORDER BY timestamp DESC LIMIT 10000`
+  ORDER BY timestamp DESC LIMIT 20000`
 
   const fields = await runQuery(rawSql, dsName, timeRange);
   setData(fields);
