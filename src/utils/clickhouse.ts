@@ -6,7 +6,7 @@ import { generateFilterString, generateHLFilterString } from "./functions";
 import { Filter } from "types/filters";
 
 
-export async function runListApps(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void) {
+export async function runListApps(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void): Promise<void> {
   const rawSql= `
 SELECT DISTINCT app_materialized AS app
 FROM "otel_logs"
@@ -18,16 +18,13 @@ WHERE app != '' AND app IS NOT NULL
     ${generateFilterString(filters)}
 ORDER BY app;
 `
-  const setFieldData = (fd: Field[]) => {
-    if ( fd.length > 0 ) {
-      setData(fd[0].values as string[])
-    }
+  const fields = await runQuery(rawSql, dsName, timeRange);
+  if (fields.length > 0) {
+    setData(fields[0].values as string[]);
   }
-
-  runQuery(rawSql, dsName, timeRange, setFieldData)
 }
 
-export async function runListComponents(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], setData: (data: string[]) => void) {
+export async function runListComponents(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], setData: (data: string[]) => void): Promise<void> {
   const rawSql= `
 SELECT DISTINCT component_materialized AS component
 FROM "otel_logs"
@@ -40,16 +37,13 @@ WHERE component != '' AND component IS NOT NULL
     ${generateFilterString(filters)}
 ORDER BY component;
 `
-  const setFieldData = (fd: Field[]) => {
-    if ( fd.length > 0 ) {
-      setData(fd[0].values as string[])
-    }
+  const fields = await runQuery(rawSql, dsName, timeRange);
+  if (fields.length > 0) {
+    setData(fields[0].values as string[]);
   }
-
-  runQuery(rawSql, dsName, timeRange, setFieldData)
 }
 
-export async function runListTeams(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void) {
+export async function runListTeams(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void): Promise<void> {
   const rawSql= `
 SELECT DISTINCT LogAttributes['team'] AS team
 FROM "otel_logs"
@@ -61,16 +55,13 @@ WHERE team != '' AND team IS NOT NULL
     ${generateFilterString(filters)}
 ORDER BY team;
 `
-  const setFieldData = (fd: Field[]) => {
-    if ( fd.length > 0 ) {
-      setData(fd[0].values as string[])
-    }
+  const fields = await runQuery(rawSql, dsName, timeRange);
+  if (fields.length > 0) {
+    setData(fields[0].values as string[]);
   }
-
-  runQuery(rawSql, dsName, timeRange, setFieldData)
 }
 
-export async function runLogQuery(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], logLevels: string[], components: string[], teams: string[], setData: (data: Field[]) => void) {
+export async function runLogQuery(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], logLevels: string[], components: string[], teams: string[], setData: (data: Field[]) => void): Promise<void> {
   const rawSql= `SELECT
     Timestamp as "timestamp",
     Body as "body",
@@ -92,10 +83,11 @@ export async function runLogQuery(dsName: string, timeRange: TimeRange, searchTe
 
   ORDER BY timestamp DESC LIMIT 10000`
 
-  runQuery(rawSql, dsName, timeRange, setData)
+  const fields = await runQuery(rawSql, dsName, timeRange);
+  setData(fields);
 }
 
-async function runQuery(rawSql: string, dsName: string, timeRange: TimeRange, setData: (data: Field[]) => void) {
+async function runQuery(rawSql: string, dsName: string, timeRange: TimeRange): Promise<Field[]> {
   try {
     const ds = await getDataSourceSrv().get(
       dsName
@@ -124,10 +116,9 @@ async function runQuery(rawSql: string, dsName: string, timeRange: TimeRange, se
     const response = isObservable(queryResult) ? await lastValueFrom(queryResult) : await queryResult;
     const data = response.data as DataFrame[]
 
-    setData(data[0].fields)
+    return data[0]?.fields || [];
   } catch (err: any) {
     console.log(err.message || 'Unknown error');
-  } finally {
-    // setLoading(false);
+    throw err;
   }
 }

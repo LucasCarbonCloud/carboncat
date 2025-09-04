@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Field, TimeRange } from '@grafana/data';
-import { TimeRangePicker } from '@grafana/ui';
+import { TimeRangePicker, useTheme2 } from '@grafana/ui';
 // import { prefixRoute } from '../utils/utils.routing';
 // import { ROUTES } from '../constants';
 // import { testIds } from '../components/testIds';
@@ -18,7 +18,7 @@ import { DATASOURCES, getQVar, getQVarTimeRange, setQVar, setQVarTimeRange } fro
 import ToggleButtonGroup from 'components/Components';
 
 function PageOne() {
-  // const s = useStyles2(getStyles);
+  const theme = useTheme2();
 
   const keys = ['level', 'timestamp', 'traceID', 'spanID', 'body'];
 
@@ -42,12 +42,20 @@ function PageOne() {
   const [filteredSearchTerm, setFilteredSearchTerm] = useState<string>(getQVar("searchTerm"));
   const [logDetails, setLogDetails] = useState<number | undefined>(undefined);
   const [timeRange, setTimeRange] = useState<TimeRange>(getQVarTimeRange());
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   useEffect(() => {
-    runLogQuery(datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams, setFields);
-    runListApps(datasource, timeRange, filteredSearchTerm, selectedFilters, setAvailableApps)
-    runListComponents(datasource, timeRange, filteredSearchTerm, selectedFilters, apps, setAvailableComponents)
-    runListTeams(datasource, timeRange, filteredSearchTerm, selectedFilters, setAvailableTeams)
+    setIsLoading(true);
+    console.log("load")
+    Promise.all([
+      runLogQuery(datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams, setFields),
+      runListApps(datasource, timeRange, filteredSearchTerm, selectedFilters, setAvailableApps),
+      runListComponents(datasource, timeRange, filteredSearchTerm, selectedFilters, apps, setAvailableComponents),
+      runListTeams(datasource, timeRange, filteredSearchTerm, selectedFilters, setAvailableTeams)
+    ]).finally(() => {
+      setIsLoading(false);
+    console.log("stop load")
+    });
   }, [datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams])
 
 
@@ -159,8 +167,6 @@ function PageOne() {
           selectedFields={selectedFields}
           labels={labels}
           selectedLabels={selectedLabels}
-          // showLevel={showLevel}
-          // setShowLevel={setShowLevel}
           highLevelFilters={hlFilters}
           tableLineHeight={tableLineHeight}
           setTableLineHeight={handleTableLineHeight}
@@ -191,16 +197,25 @@ function PageOne() {
           onZoom={() => {}}
         />
         </div>
-        <Table
-          options={options}
-          fields={fields}
-          keys={fieldsList}
-          // showLevel={showLevel}
-          lineHeight={tableLineHeight}
-          searchTerm={filteredSearchTerm}
-          setSelectedFilters={handleSetFilterTerm}
-          setLogDetails={handleSetLogDetails}
-        />
+        <div className="relative flex-grow">
+          <Table
+            options={options}
+            fields={fields}
+            keys={fieldsList}
+            lineHeight={tableLineHeight}
+            searchTerm={filteredSearchTerm}
+            setSelectedFilters={handleSetFilterTerm}
+            setLogDetails={handleSetLogDetails}
+          />
+          {isLoading && (
+            <div className={clsx(
+              "flex absolute inset-0 z-10 justify-center items-center rounded-lg backdrop-blur-[3px]",
+              theme.isDark ? 'bg-black/20' : 'bg-white/20'
+            )}>
+              <div className="w-12 h-12 rounded-full border-4 animate-spin border-[#28A0A6] border-t-transparent"></div>
+            </div>
+          )}
+        </div>
       </div>
       {logDetails !== undefined && <LogDetails options={options} fields={fields} rowIndex={logDetails} setLogDetails={handleSetLogDetails} />}
     </div>
