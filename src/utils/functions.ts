@@ -114,7 +114,7 @@ export const generateFilterString = (filters: Filter[]) => {
 };
 
 export function generateHLFilterString(key: string, cmps: string[]): string {
-  if ( cmps.length == 0 ) {
+  if ( cmps.length === 0 ) {
     return ""
   }
   const formatted = `(${cmps.map(s => `'${s}'`).join(",")})`;
