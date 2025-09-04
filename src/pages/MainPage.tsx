@@ -216,7 +216,7 @@ function PageOne() {
               <div className="w-12 h-12 rounded-full border-4 animate-spin border-[#28A0A6] border-t-transparent"></div>
             </div>
           )}
-          {errorMessage != undefined && (
+          {errorMessage !== undefined && (
             <div className={clsx(
               "flex absolute inset-0 z-10 justify-center items-center rounded-lg backdrop-blur-[3px]",
               theme.isDark ? 'bg-black/20' : 'bg-white/20'
