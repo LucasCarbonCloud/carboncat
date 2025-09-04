@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { useTheme2 } from '@grafana/ui';
@@ -35,39 +35,47 @@ export const Searchbar: React.FC<SearchbarProps> = ({
 
   const theme = useTheme2();
 
-  const filterAvailVals: { [key: string]: string[] } = {};
+  const filterAvailVals = useMemo(() => {
+    const vals: { [key: string]: string[] } = {};
 
-  fields.forEach((f: Field) => {
-    if (f.name === 'labels') {
-      f.values.forEach((o: any) => {
-        for (const k in o) {
-          const lk = 'labels.' + k;
-          if (lk in filterAvailVals) {
-            if (!filterAvailVals[lk].includes(o[k])) {
-              filterAvailVals[lk].push(o[k]);
+    fields.forEach((f: Field) => {
+      if (f.name === 'labels') {
+        f.values.forEach((o: any) => {
+          for (const k in o) {
+            const lk = 'labels.' + k;
+            if (lk in vals) {
+              if (!vals[lk].includes(o[k])) {
+                vals[lk].push(o[k]);
+              }
+            } else {
+              vals[lk] = [o[k]];
             }
-          } else {
-            filterAvailVals[lk] = [o[k]];
           }
-        }
-      });
-    } else {
-      const uvals = new Set(f.values);
-      filterAvailVals[f.name] = [...uvals];
-    }
-  });
+        });
+      } else {
+        const uvals = new Set(f.values);
+        vals[f.name] = [...uvals];
+      }
+    });
 
-  useEffect(() => {
-    setLocalValue(searchTerm);
-  }, [searchTerm]);
+    return vals;
+  }, [fields]);
+
+  // useEffect(() => {
+  //   setLocalValue(searchTerm);
+  // }, [searchTerm]);
+
+  // Use ref to store the latest onChange function
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      onChange(localValue);
-    }, 300);
+      onChangeRef.current(localValue);
+    }, 500);
 
     return () => clearTimeout(timer);
-  }, [localValue, onChange]);
+  }, [localValue]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && localValue === '') {
