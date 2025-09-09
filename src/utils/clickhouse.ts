@@ -6,7 +6,10 @@ import { generateFilterString, generateHLFilterString } from "./functions";
 import { Filter } from "types/filters";
 
 
+const keysToRemoveFromDistinct = ["spanID", "traceID", "body"];
+
 export async function runListApps(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void): Promise<void> {
+  const updatedFilters = filters.filter(f => !keysToRemoveFromDistinct.includes(f.key));
   const rawSql= `
 SELECT DISTINCT app_materialized AS app
 FROM "otel_logs"
@@ -15,7 +18,7 @@ WHERE app != '' AND app IS NOT NULL
     AND (Body ILIKE '%${searchTerm}%')
     AND SeverityText IN ('DEBUG','INFO','WARN','ERROR','FATAL')
     AND ('' = '' OR TraceId = '')
-    ${generateFilterString(filters)}
+    ${generateFilterString(updatedFilters)}
 ORDER BY app;
 `
   const fields = await runQuery(rawSql, dsName, timeRange);
@@ -25,6 +28,7 @@ ORDER BY app;
 }
 
 export async function runListComponents(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], setData: (data: string[]) => void): Promise<void> {
+  const updatedFilters = filters.filter(f => !keysToRemoveFromDistinct.includes(f.key));
   const rawSql= `
 SELECT DISTINCT component_materialized AS component
 FROM "otel_logs"
@@ -34,7 +38,7 @@ WHERE component != '' AND component IS NOT NULL
     AND SeverityText IN ('DEBUG','INFO','WARN','ERROR','FATAL')
     AND ('' = '' OR TraceId = '')
     ${generateHLFilterString("LogAttributes['app']", apps)}
-    ${generateFilterString(filters)}
+    ${generateFilterString(updatedFilters)}
 ORDER BY component;
 `
   const fields = await runQuery(rawSql, dsName, timeRange);
@@ -44,6 +48,7 @@ ORDER BY component;
 }
 
 export async function runListTeams(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void): Promise<void> {
+  const updatedFilters = filters.filter(f => !keysToRemoveFromDistinct.includes(f.key));
   const rawSql= `
 SELECT DISTINCT LogAttributes['team'] AS team
 FROM "otel_logs"
@@ -52,7 +57,7 @@ WHERE team != '' AND team IS NOT NULL
     AND (Body ILIKE '%${searchTerm}%')
     AND SeverityText IN ('DEBUG','INFO','WARN','ERROR','FATAL')
     AND ('' = '' OR TraceId = '')
-    ${generateFilterString(filters)}
+    ${generateFilterString(updatedFilters)}
 ORDER BY team;
 `
   const fields = await runQuery(rawSql, dsName, timeRange);

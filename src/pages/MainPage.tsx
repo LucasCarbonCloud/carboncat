@@ -185,7 +185,7 @@ function PageOne() {
   labels = labels.sort();
 
   const options: SimpleOptions = {
-    traceUrl: '',
+    traceUrl: 'd/cc-trace-viewer/trace-viewer?var-traceID={{ traceID }}',
     text: '',
   };
 
