@@ -45,6 +45,7 @@ function PageOne() {
   const [timeRange, setTimeRange] = useState<TimeRange>(getQVarTimeRange());
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+  const [refreshInterval, setRefreshInterval] = useState<string>('');
 
   const refreshData = () => {
     setIsLoading(true);
@@ -75,6 +76,35 @@ function PageOne() {
   useEffect(() => {
     refreshData();
   }, [datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams]);
+
+  useEffect(() => {
+    if (!refreshInterval) return;
+    
+    const parseInterval = (interval: string): number => {
+      const match = interval.match(/^(\d+)([smhd])$/);
+      if (!match) return 0;
+      
+      const value = parseInt(match[1]);
+      const unit = match[2];
+      
+      switch (unit) {
+        case 's': return value * 1000;
+        case 'm': return value * 60 * 1000;
+        case 'h': return value * 60 * 60 * 1000;
+        case 'd': return value * 24 * 60 * 60 * 1000;
+        default: return 0;
+      }
+    };
+    
+    const intervalMs = parseInterval(refreshInterval);
+    if (intervalMs === 0) return;
+    
+    const timer = setInterval(() => {
+      refreshData();
+    }, intervalMs);
+    
+    return () => clearInterval(timer);
+  }, [refreshInterval, datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams]);
 
   const handleFieldChange = (value: string[], type: string) => {
     if (type === 'label') {
@@ -209,10 +239,10 @@ function PageOne() {
             onZoom={() => {}}
           />
           <RefreshPicker
-            value="30s"
-            intervals={['5s', '10s', '30s', '1m', '5m', '15m', '30m', '1h', '2h', '1d']}
+            value={refreshInterval}
+            intervals={['5s', '10s', '30s', '1m', '2m', '5m']}
             onRefresh={refreshData}
-            onIntervalChanged={() => {}}
+            onIntervalChanged={setRefreshInterval}
           />
         </div>
 
