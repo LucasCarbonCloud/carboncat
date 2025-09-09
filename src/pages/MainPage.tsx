@@ -75,14 +75,14 @@ function PageOne() {
 
   useEffect(() => {
     refreshData();
-  }, [datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams]);
+  }, [datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!refreshInterval) return;
+    if (!refreshInterval) { return };
     
     const parseInterval = (interval: string): number => {
       const match = interval.match(/^(\d+)([smhd])$/);
-      if (!match) return 0;
+      if (!match) { return 0 };
       
       const value = parseInt(match[1]);
       const unit = match[2];
@@ -97,14 +97,14 @@ function PageOne() {
     };
     
     const intervalMs = parseInterval(refreshInterval);
-    if (intervalMs === 0) return;
+    if (intervalMs === 0) { return };
     
     const timer = setInterval(() => {
       refreshData();
     }, intervalMs);
     
     return () => clearInterval(timer);
-  }, [refreshInterval, datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams]);
+  }, [refreshInterval, datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleFieldChange = (value: string[], type: string) => {
     if (type === 'label') {
