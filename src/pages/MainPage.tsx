@@ -121,7 +121,7 @@ function PageOne() {
 
 
   useEffect(() => {
-    if (!chartContainerRef.current) return;
+    if (!chartContainerRef.current) { return };
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
@@ -155,7 +155,6 @@ function PageOne() {
   };
 
   const handleTimeRangeChange = (value: TimeRange) => {
-    console.log(timeRange)
     setTimeRange(value);
     setQVarTimeRange(value);
   };

@@ -105,7 +105,6 @@ export async function runBars(dsName: string, timeRange: TimeRange, searchTerm: 
       key: keyMap[f.key] || f.key, // if key exists in map, use mapped value; otherwise, keep original
     }));
 
-  console.log(updatedFilters);
   const rawSql= `WITH
     $__toTime - $__fromTime AS total_time, -- Total duration of the timespan "A"
     CASE
