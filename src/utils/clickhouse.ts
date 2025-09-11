@@ -8,6 +8,12 @@ import { Filter } from "types/filters";
 
 const keysToRemoveFromDistinct = ["spanID", "traceID", "body"];
 
+const keyMap: Record<string, string> = {
+  spanID: "SpanId",
+  traceID: "TraceId",
+  body: "Body",
+};
+
 export async function runListApps(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void): Promise<void> {
   const updatedFilters = filters.filter(f => !keysToRemoveFromDistinct.includes(f.key));
   const rawSql= `
@@ -93,6 +99,13 @@ export async function runLogQuery(dsName: string, timeRange: TimeRange, searchTe
 }
 
 export async function runBars(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], logLevels: string[], components: string[], teams: string[], setData: (data: Field[]) => void): Promise<void> {
+  const updatedFilters = filters
+    .map(f => ({
+      ...f,
+      key: keyMap[f.key] || f.key, // if key exists in map, use mapped value; otherwise, keep original
+    }));
+
+  console.log(updatedFilters);
   const rawSql= `WITH
     $__toTime - $__fromTime AS total_time, -- Total duration of the timespan "A"
     CASE
@@ -121,6 +134,7 @@ FROM "otel_logs"
     ${generateHLFilterString("LogAttributes['component']", components)}
     ${generateHLFilterString("LogAttributes['team']", teams)}
     ${generateHLFilterString("SeverityText", logLevels)}
+    ${generateFilterString(updatedFilters)}
 GROUP BY time
 ORDER BY time;
 
