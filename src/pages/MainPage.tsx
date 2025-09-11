@@ -11,7 +11,7 @@ import { LogDetails } from 'components/LogDetails';
 import { Overview } from 'components/Overview';
 import { Settings } from 'components/Settings';
 import { Searchbar } from 'components/Searchbar';
-import { DATASOURCES, getQVar, getQVarTimeRange, setQVar, setQVarTimeRange } from 'utils/variables';
+import { DATASOURCES, getLocalStorage, getQVar, getQVarOrLs, getQVarTimeRange, setLocalStorage, setQVar, setQVarAndLs, setQVarTimeRange } from 'utils/variables';
 import ToggleButtonGroup from 'components/Components';
 import { TimeSeriesBars } from 'components/TimeSeriesBars';
 
@@ -33,11 +33,11 @@ function PageOne() {
 
   const [datasource, setDatasource] = useState<string>(DATASOURCES[0].value);
 
-  const [selectedLabels, setSelectedLabels] = useState<string[]>(getQVar('labels'));
-  const [selectedFields, setSelectedFields] = useState<string[]>(getQVar('fields'));
+  const [selectedLabels, setSelectedLabels] = useState<string[]>(getQVarOrLs('labels'));
+  const [selectedFields, setSelectedFields] = useState<string[]>(getQVarOrLs('fields'));
   const [selectedFilters, setSelectedFilters] = useState<Filter[]>(getQVar('filters'));
   // const [showLevel, setShowLevel] = useState<boolean>(false);
-  const [tableLineHeight, setTableLineHeight] = useState<number>(35);
+  const [tableLineHeight, setTableLineHeight] = useState<number>(getLocalStorage("tableLineHeight"));
   const [searchTerm, setSearchTerm] = useState<string>(getQVar('searchTerm'));
   const [filteredSearchTerm, setFilteredSearchTerm] = useState<string>(getQVar('searchTerm'));
   const [logDetails, setLogDetails] = useState<number | undefined>(undefined);
@@ -139,10 +139,10 @@ function PageOne() {
   const handleFieldChange = (value: string[], type: string) => {
     if (type === 'label') {
       setSelectedLabels(value);
-      setQVar('labels', value);
+      setQVarAndLs('labels', value);
     } else if (type === 'field') {
       setSelectedFields(value);
-      setQVar('fields', value);
+      setQVarAndLs('fields', value);
     }
   };
 
@@ -161,7 +161,7 @@ function PageOne() {
 
   const handleTableLineHeight = (value: number) => {
     setTableLineHeight(value);
-    // locationService.partial({ 'var-tableLineHeight': value }, true);
+    setLocalStorage("tableLineHeight", value)
   };
 
   const handleSetLogDetails = (row: number | undefined) => {
