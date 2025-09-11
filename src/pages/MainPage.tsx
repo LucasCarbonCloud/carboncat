@@ -1,11 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Field, rangeUtil, TimeRange } from '@grafana/data';
 import { RefreshPicker, TimeRangePicker, useTheme2 } from '@grafana/ui';
-// import { prefixRoute } from '../utils/utils.routing';
-// import { ROUTES } from '../constants';
-// import { testIds } from '../components/testIds';
 import '../style.js';
-import { runListApps, runListComponents, runListTeams, runLogQuery } from 'utils/clickhouse';
+import { runBars, runListApps, runListComponents, runListTeams, runLogQuery } from 'utils/clickhouse';
 import { Filter, FilterOperation, HighLevelFilter, SimpleOptions } from 'types/filters';
 import { getFieldNames } from 'utils/functions';
 import clsx from 'clsx';
@@ -16,6 +13,7 @@ import { Settings } from 'components/Settings';
 import { Searchbar } from 'components/Searchbar';
 import { DATASOURCES, getQVar, getQVarTimeRange, setQVar, setQVarTimeRange } from 'utils/variables';
 import ToggleButtonGroup from 'components/Components';
+import { TimeSeriesBars } from 'components/TimeSeriesBars';
 
 
 function PageOne() {
@@ -24,6 +22,7 @@ function PageOne() {
   const keys = ['level', 'timestamp', 'traceID', 'spanID', 'body'];
 
   const [fields, setFields] = useState<Field[]>([]);
+  const [levelFields, setLevelFields] = useState<Field[]>([]);
   const [logLevels, setLogLevels] = useState<string[]>([]);
   const [availableApps, setAvailableApps] = useState<string[]>([]);
   const [apps, setApps] = useState<string[]>([]);
@@ -47,6 +46,9 @@ function PageOne() {
   const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
   const [refreshInterval, setRefreshInterval] = useState<string>('');
 
+  const [chartWidth, setChartWidth] = useState<number>(200);
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+
   const refreshData = () => {
     setIsLoading(true);
     Promise.all([
@@ -60,6 +62,17 @@ function PageOne() {
         components,
         teams,
         setFields
+      ),
+      runBars(
+        datasource,
+        rangeUtil.convertRawToRange(timeRange.raw),
+        filteredSearchTerm,
+        selectedFilters,
+        apps,
+        logLevels,
+        components,
+        teams,
+        setLevelFields
       ),
       runListApps(datasource, rangeUtil.convertRawToRange(timeRange.raw), filteredSearchTerm, selectedFilters, setAvailableApps),
       runListComponents(datasource, rangeUtil.convertRawToRange(timeRange.raw), filteredSearchTerm, selectedFilters, apps, setAvailableComponents),
@@ -105,6 +118,23 @@ function PageOne() {
     
     return () => clearInterval(timer);
   }, [refreshInterval, datasource, timeRange, filteredSearchTerm, selectedFilters, apps, logLevels, components, teams]); // eslint-disable-line react-hooks/exhaustive-deps
+
+
+  useEffect(() => {
+    if (!chartContainerRef.current) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setChartWidth(entry.contentRect.width);
+      }
+    });
+
+    resizeObserver.observe(chartContainerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   const handleFieldChange = (value: string[], type: string) => {
     if (type === 'label') {
@@ -204,6 +234,7 @@ function PageOne() {
     setTeams: setTeams,
   };
 
+
   return (
     <div className={`flex h-full w-full gap-2 px-2 pt-4 relative max-h-[calc(100dvh-50px)] `}>
       <div className={clsx('flex flex-col gap-4 pl-2 m-2 min-h-0 h-full pb-4')}>
@@ -220,6 +251,10 @@ function PageOne() {
         />
       </div>
       <div className="flex flex-col flex-grow gap-4 pr-2 m-2">
+        <div className="w-full min-w-0" ref={chartContainerRef}>
+          {TimeSeriesBars({chartWidth, timeRange, fields:levelFields, onChangeTimeRange:handleTimeRangeChange})}
+        </div>
+
         <div className="flex items-center">
           <Searchbar
             searchTerm={searchTerm}

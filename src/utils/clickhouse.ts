@@ -92,6 +92,44 @@ export async function runLogQuery(dsName: string, timeRange: TimeRange, searchTe
   setData(fields);
 }
 
+export async function runBars(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], logLevels: string[], components: string[], teams: string[], setData: (data: Field[]) => void): Promise<void> {
+  const rawSql= `WITH
+    $__toTime - $__fromTime AS total_time, -- Total duration of the timespan "A"
+    CASE
+        WHEN total_time < 10 THEN total_time / 1
+        WHEN total_time < 60 THEN total_time / 5
+        WHEN total_time < 120 THEN total_time / 50 -- If total_time is less than 2 minutes
+        ELSE total_time / 100 -- Otherwise
+    END AS slot_duration -- Duration of each slot based on the condition
+
+SELECT
+    --toStartOfInterval(Timestamp, INTERVAL 30 second) AS time,
+    toStartOfInterval(Timestamp, INTERVAL slot_duration SECOND) AS time,
+    --toStartOfInterval(Timestamp, INTERVAL slot_duration SECOND) + slot_duration AS end_time, -- Calculate end time
+
+    countIf(SeverityText = 'DEBUG') AS DEBUG,
+    countIf(SeverityText = 'INFO') AS INFO,
+    countIf(SeverityText = 'WARN') AS WARN,
+    countIf(SeverityText = 'ERROR') AS ERROR,
+    countIf(SeverityText = 'FATAL') AS FATAL
+FROM "otel_logs"
+ WHERE ( time >= $__fromTime AND time <= $__toTime )
+    AND (Body ILIKE '%${searchTerm}%')
+    AND SeverityText IN ('DEBUG','INFO','WARN','ERROR','FATAL')
+    AND ('' = '' OR TraceId = '')
+    ${generateHLFilterString("LogAttributes['app']", apps)}
+    ${generateHLFilterString("LogAttributes['component']", components)}
+    ${generateHLFilterString("LogAttributes['team']", teams)}
+    ${generateHLFilterString("SeverityText", logLevels)}
+GROUP BY time
+ORDER BY time;
+
+  `
+
+  const fields = await runQuery(rawSql, dsName, timeRange);
+  setData(fields);
+}
+
 async function runQuery(rawSql: string, dsName: string, timeRange: TimeRange): Promise<Field[]> {
   try {
     const ds = await getDataSourceSrv().get(

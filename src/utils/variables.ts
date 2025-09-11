@@ -1,4 +1,4 @@
-import { rangeUtil, TimeRange } from "@grafana/data";
+import { DateTime, isDateTime, rangeUtil, TimeRange } from "@grafana/data";
 import { locationService } from "@grafana/runtime";
 import { Filter } from "types/filters";
 import { ToggleOption } from 'types/components';
@@ -63,8 +63,17 @@ export function getQVarTimeRange(): TimeRange {
 }
 
 export function setQVarTimeRange(t: TimeRange) {
-  setQVar("from", t.raw.from as string)
-  setQVar("to", t.raw.to as string)
+  if (isDateTime(t.raw.from)) {
+    setQVar("from", (t.raw.from as DateTime).format())
+  } else {
+    setQVar("from", t.raw.from as string)
+  }
+
+  if (isDateTime(t.raw.to)) {
+    setQVar("to", (t.raw.to as DateTime).format())
+  } else {
+    setQVar("to", t.raw.to as string)
+  }
 }
 
 export function makeTimeRange(from: string, to: string): TimeRange {
