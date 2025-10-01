@@ -8,7 +8,6 @@
   "extends": ["@grafana/eslint-config"],
   "root": true,
   "rules": {
-    "radix": "off",
     "react/prop-types": "off"
   },
   "overrides": [
