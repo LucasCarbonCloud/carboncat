@@ -6,7 +6,7 @@ import { generateFilterString, generateHLFilterString } from "./functions";
 import { Filter } from "types/filters";
 
 
-const keysToRemoveFromDistinct = ["spanID", "traceID", "body"];
+// const keysToRemoveFromDistinct = ["spanID", "traceID", "body"];
 
 const keyMap: Record<string, string> = {
   spanID: "SpanId",
@@ -14,65 +14,8 @@ const keyMap: Record<string, string> = {
   body: "Body",
 };
 
-export async function runListApps(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void): Promise<void> {
-  const updatedFilters = filters.filter(f => !keysToRemoveFromDistinct.includes(f.key));
-  const rawSql= `
-SELECT DISTINCT app_materialized AS app
-FROM "otel_logs"
-WHERE app != '' AND app IS NOT NULL
-    AND ( Timestamp >= $__fromTime AND Timestamp <= $__toTime )
-    AND (Body ILIKE '%${searchTerm}%')
-    AND SeverityText IN ('DEBUG','INFO','WARN','ERROR','FATAL')
-    AND ('' = '' OR TraceId = '')
-    ${generateFilterString(updatedFilters)}
-ORDER BY app;
-`
-  const fields = await runQuery(rawSql, dsName, timeRange);
-  if (fields.length > 0) {
-    setData(fields[0].values as string[]);
-  }
-}
 
-export async function runListComponents(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], setData: (data: string[]) => void): Promise<void> {
-  const updatedFilters = filters.filter(f => !keysToRemoveFromDistinct.includes(f.key));
-  const rawSql= `
-SELECT DISTINCT component_materialized AS component
-FROM "otel_logs"
-WHERE component != '' AND component IS NOT NULL
-    AND ( Timestamp >= $__fromTime AND Timestamp <= $__toTime )
-    AND (Body ILIKE '%${searchTerm}%')
-    AND SeverityText IN ('DEBUG','INFO','WARN','ERROR','FATAL')
-    AND ('' = '' OR TraceId = '')
-    ${generateHLFilterString("LogAttributes['app']", apps)}
-    ${generateFilterString(updatedFilters)}
-ORDER BY component;
-`
-  const fields = await runQuery(rawSql, dsName, timeRange);
-  if (fields.length > 0) {
-    setData(fields[0].values as string[]);
-  }
-}
-
-export async function runListTeams(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], setData: (data: string[]) => void): Promise<void> {
-  const updatedFilters = filters.filter(f => !keysToRemoveFromDistinct.includes(f.key));
-  const rawSql= `
-SELECT DISTINCT LogAttributes['team'] AS team
-FROM "otel_logs"
-WHERE team != '' AND team IS NOT NULL
-    AND ( Timestamp >= $__fromTime AND Timestamp <= $__toTime )
-    AND (Body ILIKE '%${searchTerm}%')
-    AND SeverityText IN ('DEBUG','INFO','WARN','ERROR','FATAL')
-    AND ('' = '' OR TraceId = '')
-    ${generateFilterString(updatedFilters)}
-ORDER BY team;
-`
-  const fields = await runQuery(rawSql, dsName, timeRange);
-  if (fields.length > 0) {
-    setData(fields[0].values as string[]);
-  }
-}
-
-export async function runLogQuery(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], logLevels: string[], components: string[], teams: string[], setData: (data: Field[]) => void): Promise<void> {
+export function generateLogQuery(searchTerm: string, filters: Filter[], logLevels: string[]): string {
   const rawSql= `SELECT
     Timestamp as "timestamp",
     Body as "body",
@@ -86,19 +29,49 @@ export async function runLogQuery(dsName: string, timeRange: TimeRange, searchTe
     AND (body ILIKE '%${searchTerm}%')
     AND level IN ('DEBUG','INFO','WARN','ERROR','FATAL')
     AND ('' = '' OR traceID = '')
-    ${generateHLFilterString("LogAttributes['app']", apps)}
-    ${generateHLFilterString("LogAttributes['component']", components)}
-    ${generateHLFilterString("LogAttributes['team']", teams)}
     ${generateHLFilterString("level", logLevels)}
     ${generateFilterString(filters)}
-
   ORDER BY timestamp DESC LIMIT 20000`
 
+  return rawSql
+}
+
+
+export async function runLogQuery(dsName: string, timeRange: TimeRange, rawSql: string, setData: (data: Field[]) => void): Promise<void> {
   const fields = await runQuery(rawSql, dsName, timeRange);
   setData(fields);
 }
 
-export async function runBars(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], logLevels: string[], components: string[], teams: string[], setData: (data: Field[]) => void): Promise<void> {
+
+export async function runBars(dsName: string, timeRange: TimeRange, rawSql: string, setData: (data: Field[]) => void): Promise<void> {
+const wrappedSql = `
+WITH
+  $__toTime - $__fromTime AS total_time,
+  CASE
+      WHEN total_time < 10 THEN total_time / 1
+      WHEN total_time < 60 THEN total_time / 5
+      WHEN total_time < 120 THEN total_time / 50
+      ELSE total_time / 100
+  END AS slot_duration,
+  filtered_logs AS (
+    ${rawSql}
+  )
+SELECT
+  toStartOfInterval(timestamp, INTERVAL slot_duration SECOND) AS time,
+  countIf(level = 'DEBUG') AS DEBUG,
+  countIf(level = 'INFO') AS INFO,
+  countIf(level = 'WARN') AS WARN,
+  countIf(level = 'ERROR') AS ERROR,
+  countIf(level = 'FATAL') AS FATAL
+FROM filtered_logs
+GROUP BY time
+ORDER BY time;
+`;
+  const fields = await runQuery(wrappedSql, dsName, timeRange);
+  setData(fields);
+}
+
+export async function runBars2(dsName: string, timeRange: TimeRange, searchTerm: string, filters: Filter[], apps: string[], logLevels: string[], components: string[], teams: string[], setData: (data: Field[]) => void): Promise<void> {
   const updatedFilters = filters
     .map(f => ({
       ...f,

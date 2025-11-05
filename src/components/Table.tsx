@@ -1,26 +1,22 @@
 import React, { useState, useMemo } from 'react';
 import { Field } from '@grafana/data';
-// import { createTableRow } from './TableRow';
-// import { TableHeader } from './TableHeader';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import dayjs from 'dayjs';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlassPlus, faMagnifyingGlassMinus, faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
-
 import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
-import { FilterOperation, SimpleOptions } from 'types/filters';
+import { SimpleOptions } from 'types/filters';
 import { prettifyHeaderNames } from 'utils/functions';
+import { useSharedState } from './StateContext';
 
 export interface TableProps {
   options: SimpleOptions;
   fields: Field[];
   keys: string[];
-  // showLevel: boolean;
   lineHeight: number;
   searchTerm: string;
-  setSelectedFilters: (key: string, operation: FilterOperation, value: any, op: 'add' | 'rm' | 'only') => void;
   setLogDetails: (idx: number | undefined) => void;
 }
 
@@ -28,9 +24,7 @@ interface CellContentProps {
   options: SimpleOptions;
   columnName: string;
   value: any;
-  // displayLevel: boolean;
   searchTerm: string;
-  setSelectedFilters: (key: string, operation: FilterOperation, value: any, op: 'add' | 'rm' | 'only') => void;
   theme: any;
 }
 
@@ -38,13 +32,13 @@ const CellContent: React.FC<CellContentProps> = ({
   options,
   columnName,
   value,
-  // displayLevel,
   searchTerm,
-  setSelectedFilters,
   theme,
 }) => {
   let displayValue = value;
   const dateFormat = 'MMM DD HH:mm:ss.SSS';
+
+  const { userDispatch } = useSharedState();
 
   if (columnName === 'timestamp') {
     displayValue = dayjs(value).format(dateFormat);
@@ -117,7 +111,7 @@ const CellContent: React.FC<CellContentProps> = ({
               title="Add label to filter"
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedFilters(columnName, '=', displayValue, 'add');
+                userDispatch({type:"FILTER_ADD", payload:{key:columnName, operation:'=', value:displayValue}})
               }}
             />
             <FontAwesomeIcon
@@ -126,7 +120,7 @@ const CellContent: React.FC<CellContentProps> = ({
               title="Remove label from filter"
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedFilters(columnName, '!=', displayValue, 'add');
+                userDispatch({type:"FILTER_ADD", payload:{key:columnName, operation:'!=', value:displayValue}})
               }}
             />
             <FontAwesomeIcon
@@ -135,7 +129,7 @@ const CellContent: React.FC<CellContentProps> = ({
               title="View only this label"
               onClick={(e) => {
                 e.stopPropagation();
-                setSelectedFilters(columnName, '=', displayValue, 'only');
+                userDispatch({type:"FILTER_ONLY", payload:{key:columnName, operation:'=', value:displayValue}})
               }}
             />
           </div>
@@ -167,7 +161,7 @@ const CellContent: React.FC<CellContentProps> = ({
             title="Add label to filter"
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedFilters(columnName, '=', displayValue, 'add');
+              userDispatch({type:"FILTER_ADD", payload:{key:columnName, operation:'=', value:displayValue}})
             }}
           />
           <FontAwesomeIcon
@@ -176,7 +170,7 @@ const CellContent: React.FC<CellContentProps> = ({
             title="Remove label from filter"
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedFilters(columnName, '!=', displayValue, 'add');
+              userDispatch({type:"FILTER_ADD", payload:{key:columnName, operation:'!=', value:displayValue}})
             }}
           />
           <FontAwesomeIcon
@@ -185,7 +179,7 @@ const CellContent: React.FC<CellContentProps> = ({
             title="View only this label"
             onClick={(e) => {
               e.stopPropagation();
-              setSelectedFilters(columnName, '=', displayValue, 'only');
+              userDispatch({type:"FILTER_ONLY", payload:{key:columnName, operation:'=', value:displayValue}})
             }}
           />
         </div>
@@ -208,7 +202,7 @@ const CellContent: React.FC<CellContentProps> = ({
           title="Add label to filter"
           onClick={(e) => {
             e.stopPropagation();
-            setSelectedFilters(columnName, '=', displayValue, 'add');
+            userDispatch({type:"FILTER_ADD", payload:{key:columnName, operation:'=', value:displayValue}})
           }}
         />
         <FontAwesomeIcon
@@ -217,7 +211,7 @@ const CellContent: React.FC<CellContentProps> = ({
           title="Remove label from filter"
           onClick={(e) => {
             e.stopPropagation();
-            setSelectedFilters(columnName, '!=', displayValue, 'add');
+            userDispatch({type:"FILTER_ADD", payload:{key:columnName, operation:'!=', value:displayValue}})
           }}
         />
         <FontAwesomeIcon
@@ -226,7 +220,7 @@ const CellContent: React.FC<CellContentProps> = ({
           title="View only this label"
           onClick={(e) => {
             e.stopPropagation();
-            setSelectedFilters(columnName, '=', displayValue, 'only');
+            userDispatch({type:"FILTER_ONLY", payload:{key:columnName, operation:'=', value:displayValue}})
           }}
         />
       </div>
@@ -241,7 +235,6 @@ export const Table: React.FC<TableProps> = ({
   // showLevel,
   lineHeight,
   searchTerm,
-  setSelectedFilters,
   setLogDetails,
 }) => {
   const theme = useTheme2();
@@ -374,7 +367,6 @@ export const Table: React.FC<TableProps> = ({
               value={value}
               // displayLevel={showLevel}
               searchTerm={searchTerm}
-              setSelectedFilters={setSelectedFilters}
               theme={theme}
             />
           );

@@ -1,14 +1,13 @@
 import React from 'react';
-import { Route, Routes } from 'react-router-dom';
 import { AppRootProps } from '@grafana/data';
-const MainPage = React.lazy(() => import('../../pages/MainPage'));
+import { StateProvider } from 'components/StateContext';
+import  MainPage  from '../../pages/MainPage'
 
 function App(props: AppRootProps) {
   return (
-    <Routes>
-      {/* Default page */}
-      <Route path="*" element={<MainPage />} />
-    </Routes>
+    <StateProvider>
+      <MainPage/>
+    </StateProvider>
   );
 }
 
