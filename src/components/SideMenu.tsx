@@ -1,19 +1,21 @@
 import React from 'react';
-import { FieldSelector, NumberInput } from './Components';
+import { FieldSelector } from './Components';
 import { Filter as FilterCmp } from './Filter';
 import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
 import { MenuItemWrapper } from './Menu';
 import { useSharedState } from './StateContext';
+import { faBars } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useSettings } from './SettingsContext';
 
 
-export interface SettingsProps {
+export interface SideMenuProps {
   fields: string[];
   labels: string[];
 }
 
-export const Settings: React.FC<SettingsProps> = ({
+export const SideMenu: React.FC<SideMenuProps> = ({
   fields,
   labels,
 }) => {
@@ -33,10 +35,15 @@ export const Settings: React.FC<SettingsProps> = ({
   return (
     <div
      className={clsx(
-       'h-full overflow-y-scroll flex flex-col border-1 rounded-lg p-3',
+       'max-h-full overflow-y-scroll flex flex-col border-1 rounded-lg p-3',
        theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200 bg-white'
      )}
     >
+      <div className="flex justify-end text-neutral-500" title="Close Menu">
+        <FontAwesomeIcon icon={faBars} onClick={() => {settingsDispatch({ type: "TOGGLE_SIDEBAR" })}} />
+      </div>
+    { settingsState.sidebarOpen && (
+      <>
       <FilterCmp
        field={'logLevel'}
        selected={userState.logLevels}
@@ -46,22 +53,16 @@ export const Settings: React.FC<SettingsProps> = ({
        isOpen={true}
       />
 
-      <p
-        className={clsx(
-          'h-2 font-semibold uppercase pb-5 pt-10',
-          theme.isDark ? 'text-neutral-400' : 'text-neutral-700'
-        )}
-      >Layout</p>
       <div
         className={clsx(
-          'flex flex-col border-b-1',
+          'flex flex-col pt-2',
           theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200'
         )}
       >
         <MenuItemWrapper title='Columns' isOpen={true}>
           <p
            className={clsx(
-              'h-2 font-semibold uppercase pt-5 pb-3',
+              'h-2 font-semibold uppercase pt-1 pb-3',
               theme.isDark ? 'text-neutral-400' : 'text-neutral-700'
             )}
           >Fields</p>
@@ -98,11 +99,9 @@ export const Settings: React.FC<SettingsProps> = ({
             })}
           </div>
         </MenuItemWrapper>
-
-        <MenuItemWrapper title='Settings' isOpen={false}>
-    <NumberInput name="Line spacing" value={settingsState.tableLineHeight} maxValue={50} minValue={10} step={1} hidden={false} onChange={(v: number) => {settingsDispatch({type:"SET_TABLE_LINE_HEIGHT", payload:v})}}/>
-        </MenuItemWrapper>
       </div>
+      </>
+      )}
     </div>
   );
 };

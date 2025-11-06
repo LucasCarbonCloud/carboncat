@@ -39,7 +39,7 @@ export const Overview: React.FC<OverviewProps> = ({ fields }) => {
   }
 
   return (
-    <div className={`w-full flex gap-4`}>
+    <div className={`flex gap-4`}>
       <PieChart animate={true} data={pieData} totalValue={totalValue} className="w-2/3 max-w-52" />
       <div className="flex flex-col justify-between pt-4 w-1/3">
         <table className="text-sm">

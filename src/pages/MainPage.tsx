@@ -8,7 +8,6 @@ import clsx from 'clsx';
 import { Table } from 'components/Table';
 import { LogDetails } from 'components/LogDetails';
 import { Overview } from 'components/Overview';
-import { Settings } from 'components/Settings';
 import { Searchbar } from 'components/Searchbar';
 import { DATASOURCES } from 'utils/variables';
 import { Button, ToggleButtonGroup } from 'components/Components';
@@ -20,6 +19,7 @@ import { useClickHouse } from 'components/Clickhouse';
 import { GenerateURLParams } from 'utils/url';
 import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
 import { useSettings } from 'components/SettingsContext';
+import { SideMenu } from 'components/SideMenu';
 
 
 function PageOne() {
@@ -96,57 +96,58 @@ function PageOne() {
   };
 
   return (
-    <div className={`flex h-full w-full gap-2 px-2 pt-4 relative max-h-[calc(100dvh-50px)] `}>
+    <div className={`flex flex-col h-[calc(100dvh-50px)] w-full gap-4 px-4 pt-4 relative max-h-[calc(100dvh-50px)] `}>
       { appState.error && (
         <Error/>
       )}
       <SqlEditor/>
-      <div className={clsx('flex flex-col gap-4 pl-2 m-2 min-h-0 h-full pb-4')}>
+
+      <div className="flex gap-12 items-center">
         <Overview fields={appState.logFields} />
-        <Settings
-          fields={keys}
-          labels={labels}
-        />
-      </div>
-      <div className="flex flex-col flex-grow gap-4 pr-2 m-2">
         <div className="w-full min-w-0" ref={chartContainerRef}>
           {TimeSeriesBars({chartWidth, timeRange:userState.timeRange, fields:appState.levelFields, onChangeTimeRange:handleTimeRangeChange})}
         </div>
+      </div>
 
-        <div className="flex items-center">
-          <Searchbar
-            fields={appState.logFields}
-            labels={[...keys, ...labels]}
-          />
-          <ToggleButtonGroup
-            defaultValue={userState.datasource}
-            options={DATASOURCES}
-            onChange={(d: string) => {userDispatch({type:'SET_DATASOURCE', payload:d})}}
-          />
-          <Button
-            className='mr-2'
-            options={{label: "Share link", disabled: false, icon:faArrowUpRightFromSquare}}
-            onClick={async () => {
-              const params = GenerateURLParams(userState, true)
-              await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?${params.toString()}`);
-            }}
-          />
-          <TimeRangePicker
-            value={userState.timeRange}
-            onChange={handleTimeRangeChange}
-            onChangeTimeZone={() => {}}
-            onMoveBackward={() => {}}
-            onMoveForward={() => {}}
-            onZoom={() => {}}
-          />
-          <RefreshPicker
-            value={userState.refreshInterval}
-            intervals={['5s', '10s', '30s', '1m', '2m', '5m']}
-            onRefresh={refreshSqlData}
-            onIntervalChanged={(ri: string) => {userDispatch({type:"SET_REFRESH_INTERVAL", payload:ri})}}
-          />
-        </div>
+      <div className="flex items-center">
+        <Searchbar
+          fields={appState.logFields}
+          labels={[...keys, ...labels]}
+        />
+        <ToggleButtonGroup
+          defaultValue={userState.datasource}
+          options={DATASOURCES}
+          onChange={(d: string) => {userDispatch({type:'SET_DATASOURCE', payload:d})}}
+        />
+        <Button
+          className='mr-2'
+          options={{label: "Share link", disabled: false, icon:faArrowUpRightFromSquare}}
+          onClick={async () => {
+            const params = GenerateURLParams(userState, true)
+            await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?${params.toString()}`);
+          }}
+        />
+        <TimeRangePicker
+          value={userState.timeRange}
+          onChange={handleTimeRangeChange}
+          onChangeTimeZone={() => {}}
+          onMoveBackward={() => {}}
+          onMoveForward={() => {}}
+          onZoom={() => {}}
+        />
+        <RefreshPicker
+          value={userState.refreshInterval}
+          intervals={['5s', '10s', '30s', '1m', '2m', '5m']}
+          onRefresh={refreshSqlData}
+          onIntervalChanged={(ri: string) => {userDispatch({type:"SET_REFRESH_INTERVAL", payload:ri})}}
+        />
+      </div>
 
+      <div className="flex flex-grow gap-2 min-h-0 max-h-full">
+        <SideMenu
+          fields={keys}
+          labels={labels}
+        />
         <div className="relative flex-grow">
           <Table
             options={options}

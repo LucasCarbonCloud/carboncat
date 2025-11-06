@@ -2,20 +2,24 @@ import React, { createContext, useContext, useReducer, ReactNode, Dispatch, useE
 
 interface SettingsState {
   tableLineHeight: number;
+  sidebarOpen: boolean;
 }
 
 const initialSettingsState: SettingsState = {
   tableLineHeight: 35,
+  sidebarOpen: true,
 };
 
 type SettingsAction =
   | { type: 'SET_TABLE_LINE_HEIGHT'; payload: number }
-  | { type: 'CLOSE_SQL_EDITOR' };
+  | { type: 'TOGGLE_SIDEBAR' };
 
 function settingsReducer(state: SettingsState, action: SettingsAction): SettingsState {
   switch (action.type) {
     case 'SET_TABLE_LINE_HEIGHT':
       return { ...state, tableLineHeight: action.payload };
+    case 'TOGGLE_SIDEBAR':
+      return { ...state, sidebarOpen: !state.sidebarOpen };
     default:
       return state;
   }
