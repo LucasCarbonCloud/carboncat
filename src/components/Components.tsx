@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {  faPlusCircle, faMinusCircle } from '@fortawesome/free-solid-svg-icons';
 import clsx from 'clsx';
 import { prettifyHeaderNames } from 'utils/functions';
-import { ToggleOption } from 'types/components';
+import { ButtonOption, ToggleOption } from 'types/components';
 import { useTheme2 } from '@grafana/ui';
 
 export interface FieldSelectorProps {
@@ -74,7 +74,7 @@ interface ToggleButtonGroupProps {
   onChange?: (value: string) => void;
 }
 
-export default function ToggleButtonGroup({
+export function ToggleButtonGroup({
   options,
   defaultValue,
   onChange,
@@ -116,6 +116,52 @@ return (
           )}
         </div>
       ))}
+    </div>
+  );
+}
+
+
+interface ButtonProps {
+  options: ButtonOption;
+  className: string;
+  onClick?: () => void;
+}
+
+export function Button({
+  options,
+  className,
+  onClick,
+}: ButtonProps) {
+
+  // const handleClick = (value: string, disabled?: boolean) => {
+  //   if (disabled) { return };
+  //   setSelected(value);
+  //   onChange?.(value);
+  // };
+
+  const theme = useTheme2();
+
+return (
+  <div className={clsx(
+    "inline-flex rounded-lg border ",
+    theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200',
+    className
+  )}
+  >
+        <div
+          title={options.label}
+          onClick={options.disabled ? () =>{} : onClick}
+          className={[
+            "flex items-center justify-center px-3 py-2 text-sm transition-colors rounded-lg",
+            theme.isDark ? "hover:bg-neutral-500" : "hover:bg-neutral-100",
+            options.disabled ? "opacity-50 cursor-not-allowed" : "",
+            theme.isDark ? 'bg-neutral-800/20' : "bg-white text-gray-600",
+          ].join(" ")}
+        >
+          {options.icon && (
+            <FontAwesomeIcon icon={options.icon} className="w-4 h-4" />
+          )}
+        </div>
     </div>
   );
 }

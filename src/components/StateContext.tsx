@@ -1,8 +1,9 @@
-import { DateTime, Field, isDateTime, rangeUtil, TimeRange } from "@grafana/data";
+import { Field, rangeUtil, TimeRange } from "@grafana/data";
 import React, { createContext, useContext, useReducer, ReactNode, Dispatch, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Filter } from "types/filters";
 import { Mode } from "types/state";
+import { GenerateURLParams } from "utils/url";
 import { DATASOURCES } from "utils/variables";
 
 interface UserState {
@@ -162,38 +163,10 @@ export function StateProvider({ children }: { children: ReactNode }) {
   const [userState, userDispatch] = useReducer(userReducer, userStateFromQueryParams(searchParams));
   const [appState, appDispatch] = useReducer(appReducer, initialAppState);
 
-
   useEffect(() => {
-    const params = new URLSearchParams();
-
-    if (userState.searchTerm) {params.set("search", userState.searchTerm)};
-    if (userState.sqlExpression) {params.set("sql", btoa(userState.sqlExpression))};
-    params.set("mode", userState.mode);
-    if (userState.filters?.length) {params.set("filters", btoa(JSON.stringify(userState.filters)))};
-    if (userState.timeRange) {
-      params.set("from", makeTimePart(userState.timeRange.raw.from));
-      params.set("to", makeTimePart(userState.timeRange.raw.to));
-    }
-    if (userState.datasource) {params.set("ds", userState.datasource)};
-    if (userState.logLevels?.length) {
-      params.set("logLevels", btoa(JSON.stringify(userState.logLevels)));
-    }
-    if (userState.refreshInterval) {
-      params.set("refresh", userState.refreshInterval);
-    }
-    if (userState.logDetails) {
-      params.set("logDetails", JSON.stringify(userState.logDetails));
-    }
-    if (userState.selectedFields?.length) {
-      params.set("fields", btoa(JSON.stringify(userState.selectedFields)));
-    }
-    if (userState.selectedLabels?.length) {
-      params.set("labels", btoa(JSON.stringify(userState.selectedLabels)));
-    }
-
+    const params = GenerateURLParams(userState, false)
     setSearchParams(params, { replace: true });
   }, [userState, setSearchParams]);
-
 
   return <StateContext.Provider value={{ userState, userDispatch, appState, appDispatch }}>{children}</StateContext.Provider>;
 }
@@ -231,14 +204,6 @@ const userStateFromQueryParams = (u: URLSearchParams): UserState => {
   return us
 }
 
-
-const makeTimePart = (t: string | DateTime): string => {
-  if (isDateTime(t)) {
-    return (t as DateTime).format()
-  } else {
-    return t as string
-  }
-}
 
 const handleFilterChange = (prevFilters: Filter[], filter: Filter, op: 'add' | 'rm' | 'only'): Filter[] => {
   const filters = (prevFilters: Filter[]) => {

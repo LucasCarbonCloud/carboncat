@@ -10,13 +10,15 @@ import { LogDetails } from 'components/LogDetails';
 import { Overview } from 'components/Overview';
 import { Settings } from 'components/Settings';
 import { Searchbar } from 'components/Searchbar';
-import { DATASOURCES, getLocalStorage, setLocalStorage, setQVarTimeRange } from 'utils/variables';
-import ToggleButtonGroup from 'components/Components';
+import { DATASOURCES, getLocalStorage, setLocalStorage } from 'utils/variables';
+import { Button, ToggleButtonGroup } from 'components/Components';
 import { TimeSeriesBars } from 'components/TimeSeriesBars';
 import { SqlEditor } from 'components/SqlEditor';
 import { useSharedState } from 'components/StateContext';
 import { Error } from 'components/Error';
 import { useClickHouse } from 'components/Clickhouse';
+import { GenerateURLParams } from 'utils/url';
+import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
 
 
 function PageOne() {
@@ -51,7 +53,6 @@ function PageOne() {
 
   const handleTimeRangeChange = (value: TimeRange) => {
     userDispatch({type:"SET_TIMERANGE", payload:value})
-    setQVarTimeRange(value);
   };
 
   const handleTableLineHeight = (value: number) => {
@@ -130,6 +131,14 @@ function PageOne() {
             options={DATASOURCES}
             onChange={(d: string) => {userDispatch({type:'SET_DATASOURCE', payload:d})}}
           />
+          <Button
+            className='mr-2'
+            options={{label: "Share link", disabled: false, icon:faArrowUpRightFromSquare}}
+            onClick={async () => {
+              const params = GenerateURLParams(userState, true)
+              await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?${params.toString()}`);
+            }}
+          />
           <TimeRangePicker
             value={userState.timeRange}
             onChange={handleTimeRangeChange}
@@ -165,11 +174,11 @@ function PageOne() {
               <div className="w-12 h-12 rounded-full border-4 animate-spin border-[#28A0A6] border-t-transparent"></div>
             </div>
           )}
+          {userState.logDetails !== null && (
+            <LogDetails options={options} fields={appState.logFields} rowIndex={userState.logDetails} setLogDetails={handleSetLogDetails} />
+          )}
         </div>
       </div>
-      {userState.logDetails !== null && (
-        <LogDetails options={options} fields={appState.logFields} rowIndex={userState.logDetails} setLogDetails={handleSetLogDetails} />
-      )}
     </div>
   );
 }
