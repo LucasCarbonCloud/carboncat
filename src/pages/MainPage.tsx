@@ -10,7 +10,7 @@ import { LogDetails } from 'components/LogDetails';
 import { Overview } from 'components/Overview';
 import { Settings } from 'components/Settings';
 import { Searchbar } from 'components/Searchbar';
-import { DATASOURCES, getLocalStorage, setLocalStorage } from 'utils/variables';
+import { DATASOURCES } from 'utils/variables';
 import { Button, ToggleButtonGroup } from 'components/Components';
 import { TimeSeriesBars } from 'components/TimeSeriesBars';
 import { SqlEditor } from 'components/SqlEditor';
@@ -19,6 +19,7 @@ import { Error } from 'components/Error';
 import { useClickHouse } from 'components/Clickhouse';
 import { GenerateURLParams } from 'utils/url';
 import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+import { useSettings } from 'components/SettingsContext';
 
 
 function PageOne() {
@@ -26,13 +27,11 @@ function PageOne() {
 
   const keys = ['level', 'timestamp', 'traceID', 'spanID', 'body'];
 
-  const [tableLineHeight, setTableLineHeight] = useState<number>(getLocalStorage("tableLineHeight"));
-
   const [chartWidth, setChartWidth] = useState<number>(200);
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
-
-  const {userState, userDispatch, appState } = useSharedState();
+  const { settingsState } = useSettings()
+  const { userState, userDispatch, appState } = useSharedState();
   const refreshSqlData = useClickHouse()
 
   useEffect(() => {
@@ -53,11 +52,6 @@ function PageOne() {
 
   const handleTimeRangeChange = (value: TimeRange) => {
     userDispatch({type:"SET_TIMERANGE", payload:value})
-  };
-
-  const handleTableLineHeight = (value: number) => {
-    setTableLineHeight(value);
-    setLocalStorage("tableLineHeight", value)
   };
 
   const handleSetLogDetails = (row: number | undefined) => {
@@ -112,8 +106,6 @@ function PageOne() {
         <Settings
           fields={keys}
           labels={labels}
-          tableLineHeight={tableLineHeight}
-          setTableLineHeight={handleTableLineHeight}
         />
       </div>
       <div className="flex flex-col flex-grow gap-4 pr-2 m-2">
@@ -160,7 +152,7 @@ function PageOne() {
             options={options}
             fields={appState.logFields}
             keys={fieldsList}
-            lineHeight={tableLineHeight}
+            lineHeight={settingsState.tableLineHeight}
             searchTerm={userState.searchTerm}
             setLogDetails={handleSetLogDetails}
           />

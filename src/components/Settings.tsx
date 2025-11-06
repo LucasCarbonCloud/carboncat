@@ -5,24 +5,22 @@ import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
 import { MenuItemWrapper } from './Menu';
 import { useSharedState } from './StateContext';
+import { useSettings } from './SettingsContext';
 
 
 export interface SettingsProps {
   fields: string[];
   labels: string[];
-  tableLineHeight: number;
-  setTableLineHeight: (value: number) => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({
   fields,
   labels,
-  tableLineHeight,
-  setTableLineHeight,
 }) => {
   const theme = useTheme2();
 
   const { userState, userDispatch } = useSharedState();
+  const { settingsState, settingsDispatch } = useSettings();
 
   const handleLabelChange = (value: string) => {
     userDispatch({type:"TOGGLE_LABEL", payload: value})
@@ -102,7 +100,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </MenuItemWrapper>
 
         <MenuItemWrapper title='Settings' isOpen={false}>
-          <NumberInput name="Line spacing" value={tableLineHeight} maxValue={50} minValue={10} step={1} hidden={false} onChange={setTableLineHeight}/>
+    <NumberInput name="Line spacing" value={settingsState.tableLineHeight} maxValue={50} minValue={10} step={1} hidden={false} onChange={(v: number) => {settingsDispatch({type:"SET_TABLE_LINE_HEIGHT", payload:v})}}/>
         </MenuItemWrapper>
       </div>
     </div>
