@@ -1,10 +1,12 @@
-import { Field, rangeUtil, TimeRange } from "@grafana/data";
-import React, { createContext, useContext, useReducer, ReactNode, Dispatch } from "react";
+import { DateTime, Field, isDateTime, rangeUtil, TimeRange } from "@grafana/data";
+import React, { createContext, useContext, useReducer, ReactNode, Dispatch, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Filter } from "types/filters";
+import { Mode } from "types/state";
 import { DATASOURCES } from "utils/variables";
 
 interface UserState {
-  sqlMode: boolean;
+  mode: Mode;
   sqlEditorOpen: boolean;
   sqlExpression: string|null;
   searchTerm: string;
@@ -19,7 +21,7 @@ interface UserState {
 }
 
 const initialUserState: UserState = {
-  sqlMode: false,
+  mode: "normal",
   sqlEditorOpen: false,
   sqlExpression: null,
   searchTerm: "",
@@ -88,7 +90,7 @@ function userReducer(state: UserState, action: UserAction): UserState {
     case "CLEAR_SQL":
       return { ...state, sqlExpression: null };
     case "SQLMODE":
-      return {...state, sqlMode: action.payload}
+      return {...state, mode: action.payload ? "sql" : "normal" }
     case "OPEN_SQL_EDITOR":
       return {...state, sqlEditorOpen: true};
     case "CLOSE_SQL_EDITOR":
@@ -155,8 +157,44 @@ interface StateContextType {
 const StateContext = createContext<StateContextType | undefined>(undefined);
 
 export function StateProvider({ children }: { children: ReactNode }) {
-  const [userState, userDispatch] = useReducer(userReducer, initialUserState);
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const [userState, userDispatch] = useReducer(userReducer, userStateFromQueryParams(searchParams));
   const [appState, appDispatch] = useReducer(appReducer, initialAppState);
+
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (userState.searchTerm) {params.set("search", userState.searchTerm)};
+    if (userState.sqlExpression) {params.set("sql", btoa(userState.sqlExpression))};
+    params.set("mode", userState.mode);
+    if (userState.filters?.length) {params.set("filters", btoa(JSON.stringify(userState.filters)))};
+    if (userState.timeRange) {
+      params.set("from", makeTimePart(userState.timeRange.raw.from));
+      params.set("to", makeTimePart(userState.timeRange.raw.to));
+    }
+    if (userState.datasource) {params.set("ds", userState.datasource)};
+    if (userState.logLevels?.length) {
+      params.set("logLevels", btoa(JSON.stringify(userState.logLevels)));
+    }
+    if (userState.refreshInterval) {
+      params.set("refresh", userState.refreshInterval);
+    }
+    if (userState.logDetails) {
+      params.set("logDetails", JSON.stringify(userState.logDetails));
+    }
+    if (userState.selectedFields?.length) {
+      params.set("fields", btoa(JSON.stringify(userState.selectedFields)));
+    }
+    if (userState.selectedLabels?.length) {
+      params.set("labels", btoa(JSON.stringify(userState.selectedLabels)));
+    }
+
+    setSearchParams(params, { replace: true });
+  }, [userState, setSearchParams]);
+
+
   return <StateContext.Provider value={{ userState, userDispatch, appState, appDispatch }}>{children}</StateContext.Provider>;
 }
 
@@ -168,6 +206,39 @@ export function useSharedState(): StateContextType {
   return context;
 }
 
+const userStateFromQueryParams = (u: URLSearchParams): UserState => {
+  let us = initialUserState
+
+  if (u.get("search"))     { us.searchTerm = u.get("search") as string }
+  if (u.get("sql"))        { us.sqlExpression = atob(u.get("sql") as string) }
+  if (u.get("mode"))       { us.mode = u.get("mode") as Mode }
+  if (u.get("filters"))    { us.filters = JSON.parse(atob(u.get("filters") as string)) }
+  if (u.get("from") && u.get("to")) {
+    us.timeRange = rangeUtil.convertRawToRange({ from:u.get("from") as string, to:u.get("to") as string })
+  }
+  if (u.get("ds"))         { us.datasource = u.get("ds") as string }
+  if (u.get("logLevels"))  { us.logLevels = JSON.parse(atob(u.get("logLevels") as string)) }
+  if (u.get("refresh"))    { us.refreshInterval = u.get("refresh") as string }
+  if (u.get("logDetails")) { us.logDetails = JSON.parse(u.get("logDetails") as string) }
+  if (u.get("fields"))     { us.selectedFields = JSON.parse(atob(u.get("fields") as string)) }
+  if (u.get("labels"))     { us.selectedLabels = JSON.parse(atob(u.get("labels") as string)) }
+
+
+  // Special flags
+  if (u.get("app")) { us.filters = [...us.filters, {key:"labels.app", operation:"=", value:u.get("app") as string}]}
+  if (u.get("team")) { us.filters = [...us.filters, {key:"labels.team", operation:"=", value:u.get("team") as string}]}
+
+  return us
+}
+
+
+const makeTimePart = (t: string | DateTime): string => {
+  if (isDateTime(t)) {
+    return (t as DateTime).format()
+  } else {
+    return t as string
+  }
+}
 
 const handleFilterChange = (prevFilters: Filter[], filter: Filter, op: 'add' | 'rm' | 'only'): Filter[] => {
   const filters = (prevFilters: Filter[]) => {

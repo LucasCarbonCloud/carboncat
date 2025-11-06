@@ -173,7 +173,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
       </div>
     <div className={clsx(
       `relative w-full flex items-center rounded-r-lg`,
-      userState.sqlMode ? "bg-gray-100" : theme.isDark ? 'bg-neutral-900' : 'bg-white',
+      userState.mode === "sql" ? "bg-gray-100" : theme.isDark ? 'bg-neutral-900' : 'bg-white',
     )}>
         {userState.filters.length > 0 && (
           <div className={clsx(`text-xs pl-2 flex gap-1 font-bold`)}>
@@ -210,7 +210,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
           value={localValue}
           onChange={(e) => valueChange(e.target.value)}
           onKeyDown={(e) => onKeyDown(e)}
-          disabled={userState.sqlMode}
+          disabled={userState.mode === "sql" }
         />
         {filteredValues.length > 0 && (
           <div
@@ -232,7 +232,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
           </div>
         )}
       <div className="pr-3">
-        {userState.sqlMode &&
+        {userState.mode === "sql"  &&
             <FontAwesomeIcon
               title={"Open SQL Editor"}
               icon={faPenToSquare}
@@ -241,17 +241,17 @@ export const Searchbar: React.FC<SearchbarProps> = ({
             />
         }
         <FontAwesomeIcon
-          title={userState.sqlMode ? 'Exit SQL-Mode' : "Enter SQL-Mode"}
+          title={userState.mode === "sql"  ? 'Exit SQL-Mode' : "Enter SQL-Mode"}
           icon={faCode}
-          className={`text-lg cursor-pointer hover:text-neutral-300 ${userState.sqlMode ? "text-fuchsia-600 drop-shadow drop-shadow-fuchsia-600/80" : ""}`}
+          className={`text-lg cursor-pointer hover:text-neutral-300 ${userState.mode === "sql"  ? "text-fuchsia-600 drop-shadow drop-shadow-fuchsia-600/80" : ""}`}
           onClick={() => {
-            if (!userState.sqlMode) {
+            if (userState.mode !== "sql" ) {
               userDispatch({type: 'SET_SQL', payload:appState.sqlExpression})
               userDispatch({type:"OPEN_SQL_EDITOR"})
             } else {
               userDispatch({type: 'CLEAR_SQL' })
             }
-            userDispatch({type:"SQLMODE", payload:!userState.sqlMode});
+            userDispatch({type:"SQLMODE", payload:userState.mode !== "sql" });
           }}
         />
       </div>

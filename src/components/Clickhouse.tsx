@@ -15,7 +15,7 @@ export function useClickHouse()  {
   }
 
   useEffect(() => {
-    if (userState.sqlMode) {
+    if (userState.mode === "sql" ) {
       const sqlExpr = userState.sqlExpression as string
       appDispatch({type: 'SET_SQL', payload:sqlExpr})
     } else {
