@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faMagnifyingGlass, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faMagnifyingGlass, faXmark, faCode, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
 import { Field } from '@grafana/data';
 import { Filter, FilterOperation } from 'types/filters';
+import { useSharedState } from './StateContext';
 
 const tokenRegex = /#([A-Za-z0-9_.-]+)(!?=)([^#]+)#/g;
 const keyRegex = /#([A-Za-z0-9_.-]*)/g;
@@ -12,23 +13,17 @@ const fullRegex = /#([A-Za-z0-9_.-=!]*)/g;
 const valueRegex = /#([A-Za-z0-9_.-]+)(!?=)([^#]*)/g;
 
 export interface SearchbarProps {
-  searchTerm: string;
   fields: Field[];
   labels: string[];
-  onChange: (field: string) => void;
-  selectedFilters: Filter[];
-  setSelectedFilters: (key: string, operation: FilterOperation, value: any, op: 'add' | 'rm') => void;
 }
 
 export const Searchbar: React.FC<SearchbarProps> = ({
-  searchTerm,
   fields,
   labels,
-  onChange,
-  selectedFilters,
-  setSelectedFilters,
 }) => {
-  const [localValue, setLocalValue] = useState(searchTerm);
+  const { userState, userDispatch, appState } = useSharedState();
+
+  const [localValue, setLocalValue] = useState(userState.searchTerm);
   const [filteredValues, setFilteredValues] = useState<string[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [toDeleteFilterIdx, setToDeleteFilterIdx] = useState(-1);
@@ -61,30 +56,24 @@ export const Searchbar: React.FC<SearchbarProps> = ({
     return vals;
   }, [fields]);
 
-  // useEffect(() => {
-  //   setLocalValue(searchTerm);
-  // }, [searchTerm]);
-
-  // Use ref to store the latest onChange function
-  const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      onChangeRef.current(localValue);
+      const filteredVal = localValue.replace(/#\S*\s?/g, '').trim();
+      userDispatch({type: 'SET_SEARCHTERM', payload: filteredVal})
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [localValue]);
+  }, [localValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && localValue === '') {
       if (toDeleteFilterIdx > -1) {
-        const f = selectedFilters[toDeleteFilterIdx];
-        setSelectedFilters(f.key, f.operation, f.value, 'rm');
+        const f = userState.filters[toDeleteFilterIdx];
+        userDispatch({type:"FILTER_RM", payload: f});
         setToDeleteFilterIdx(-1);
       } else {
-        setToDeleteFilterIdx(selectedFilters.length - 1);
+        setToDeleteFilterIdx(userState.filters.length - 1);
       }
       return;
     }
@@ -130,7 +119,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
       const match = tokenRegex.exec(v);
       st = st.replaceAll(v, '');
       if (match != null) {
-        setSelectedFilters(match[1], match[2] as FilterOperation, match[3], 'add');
+        userDispatch({type:"FILTER_ADD", payload: {key: match[1], operation: match[2] as FilterOperation, value:match[3]}});
       }
     });
 
@@ -184,11 +173,11 @@ export const Searchbar: React.FC<SearchbarProps> = ({
       </div>
     <div className={clsx(
       `relative w-full flex items-center rounded-r-lg`,
-       theme.isDark ? 'bg-neutral-900' : 'bg-white'
+      userState.mode === "sql" ? "bg-gray-100" : theme.isDark ? 'bg-neutral-900' : 'bg-white',
     )}>
-        {selectedFilters.length > 0 && (
+        {userState.filters.length > 0 && (
           <div className={clsx(`text-xs pl-2 flex gap-1 font-bold`)}>
-            {selectedFilters.map((f: Filter, idx: number) => (
+            {userState.filters.map((f: Filter, idx: number) => (
               <div
                 key={`${f.key}-${f.value}`}
                 className={clsx(
@@ -205,7 +194,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
                   className="pl-1 cursor-pointer hover:text-neutral-300"
                   onClick={() => {
                     setToDeleteFilterIdx(-1);
-                    setSelectedFilters(f.key, f.operation, f.value, 'rm');
+                    userDispatch({type:"FILTER_RM", payload: f});
                   }}
                 />
               </div>
@@ -215,12 +204,13 @@ export const Searchbar: React.FC<SearchbarProps> = ({
 
         <input
           className="flex-grow p-3 rounded-lg outline-none"
-          style={{ borderTopRightRadius: '0.5rem', borderBottomRightRadius: '0.5rem' }}
+          style={{ borderTopRightRadius: '0.5rem', borderBottomRightRadius: '0.5rem', background: "none" }}
           type="text"
           placeholder="Filter your logs. Add filters with #key[!=/=]value#. Free text search the message."
           value={localValue}
           onChange={(e) => valueChange(e.target.value)}
           onKeyDown={(e) => onKeyDown(e)}
+          disabled={userState.mode === "sql" }
         />
         {filteredValues.length > 0 && (
           <div
@@ -241,6 +231,30 @@ export const Searchbar: React.FC<SearchbarProps> = ({
             ))}
           </div>
         )}
+      <div className="pr-3">
+        {userState.mode === "sql"  &&
+            <FontAwesomeIcon
+              title={"Open SQL Editor"}
+              icon={faPenToSquare}
+              className={`text-lg cursor-pointer hover:text-neutral-300 pr-2`}
+              onClick={() => {userDispatch({type:"OPEN_SQL_EDITOR"})}}
+            />
+        }
+        <FontAwesomeIcon
+          title={userState.mode === "sql"  ? 'Exit SQL-Mode' : "Enter SQL-Mode"}
+          icon={faCode}
+          className={`text-lg cursor-pointer hover:text-neutral-300 ${userState.mode === "sql"  ? "text-fuchsia-600 drop-shadow drop-shadow-fuchsia-600/80" : ""}`}
+          onClick={() => {
+            if (userState.mode !== "sql" ) {
+              userDispatch({type: 'SET_SQL', payload:appState.sqlExpression})
+              userDispatch({type:"OPEN_SQL_EDITOR"})
+            } else {
+              userDispatch({type: 'CLEAR_SQL' })
+            }
+            userDispatch({type:"SQLMODE", payload:userState.mode !== "sql" });
+          }}
+        />
+      </div>
       </div>
     </div>
   );

@@ -1,138 +1,52 @@
 import React from 'react';
-import { FieldSelector, NumberInput } from './Components';
-import { Filter as FilterCmp } from './Filter';
-import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
-import { MenuItemWrapper } from './Menu';
-import { HighLevelFilter } from 'types/filters';
+import { useSharedState } from './StateContext';
+import { useTheme2 } from '@grafana/ui';
+import { NumberInput, SettingsCheckbox } from './Components';
+import { useSettings } from './SettingsContext';
 
+export interface SettingsProps {}
 
-export interface SettingsProps {
-  fields: string[];
-  selectedFields: string[];
-  labels: string[];
-  selectedLabels: string[];
-  // showLevel: boolean;
-  // setShowLevel: (showLevel: boolean) => void;
-  highLevelFilters: HighLevelFilter;
-  tableLineHeight: number;
-  setTableLineHeight: (value: number) => void;
-  onChange: (selected: string[], changeType: string) => void;
-}
-
-export const Settings: React.FC<SettingsProps> = ({
-  fields,
-  selectedFields,
-  labels,
-  selectedLabels,
-  // showLevel,
-  // setShowLevel,
-  highLevelFilters,
-  tableLineHeight,
-  setTableLineHeight,
-  onChange,
-}) => {
+export const Settings: React.FC<SettingsProps> = () => {
+  const { appDispatch } = useSharedState();
+  const { settingsState, settingsDispatch } = useSettings();
   const theme = useTheme2();
-
-  const handleLabelChange = (value: string) => {
-    const newSelected = selectedLabels.includes(value)
-      ? selectedLabels.filter((v) => v !== value)
-      : [...selectedLabels, value];
-    onChange(newSelected, 'label');
-  };
-
-  const handleFieldChange = (value: string) => {
-    const newSelected = selectedFields.includes(value)
-      ? selectedFields.filter((v) => v !== value)
-      : [...selectedFields, value];
-    onChange(newSelected, 'field');
-  };
-
-  // const handleShowLevelChange = (value: string) => {
-  //   setShowLevel(!showLevel);
-  // };
 
   return (
     <div
-     className={clsx(
-       'h-full overflow-y-scroll flex flex-col border-1 rounded-lg p-3',
-       theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200 bg-white'
-     )}
+      className={clsx(
+        'flex absolute inset-0 z-10 justify-center items-center rounded-lg backdrop-blur-[3px]',
+        theme.isDark ? 'bg-black/20' : 'bg-white/20'
+      )}
     >
-      <p
-        className={clsx(
-          'h-2 font-semibold uppercase pb-5',
-          theme.isDark ? 'text-neutral-400' : 'text-neutral-700'
-        )}
-      >Filters</p>
-      <div
-        className={clsx(
-          'flex flex-col border-b-1',
-          theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200'
-        )}
-      >
-        <FilterCmp field={'logLevel'} selected={highLevelFilters.logLevels} setFunc={highLevelFilters.setLogLevels} options={highLevelFilters.availableLogLevels} showName="Log Level" isOpen={true} />
-        <FilterCmp field={'app'} selected={highLevelFilters.apps} setFunc={highLevelFilters.setApps} options={highLevelFilters.availableApps} showName="app" isOpen={false} />
-        <FilterCmp field={'component'} selected={highLevelFilters.components} setFunc={highLevelFilters.setComponents} options={highLevelFilters.availableComponents} showName="component" isOpen={false} />
-        <FilterCmp field={'team'} selected={highLevelFilters.teams} setFunc={highLevelFilters.setTeams} options={highLevelFilters.availableTeams} showName="team" isOpen={false} />
-      </div>
-
-      <p
-        className={clsx(
-          'h-2 font-semibold uppercase pb-5 pt-10',
-          theme.isDark ? 'text-neutral-400' : 'text-neutral-700'
-        )}
-      >Layout</p>
-      <div
-        className={clsx(
-          'flex flex-col border-b-1',
-          theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200'
-        )}
-      >
-        <MenuItemWrapper title='Columns' isOpen={true}>
-          <p
-           className={clsx(
-              'h-2 font-semibold uppercase pt-5 pb-3',
-              theme.isDark ? 'text-neutral-400' : 'text-neutral-700'
-            )}
-          >Fields</p>
-          <div className={`gap-1`}>
-            {fields.map((field) => {
-              return (
-                <FieldSelector
-                  key={field}
-                  field={field}
-                  isChecked={selectedFields.includes(field)}
-                  hidden={false}
-                  onChange={handleFieldChange}
-                />
-              );
-            })}
-          </div>
-          <p
-            className={clsx(
-              'h-2 font-semibold uppercase pt-5 pb-3',
-              theme.isDark ? 'text-neutral-400' : 'text-neutral-700'
-            )}
-          >Labels</p>
-          <div className={`gap-1`}>
-            {labels.map((field) => {
-              return (
-                <FieldSelector
-                  key={field}
-                  field={field}
-                  isChecked={selectedLabels.includes(field)}
-                  hidden={false}
-                  onChange={handleLabelChange}
-                />
-              );
-            })}
-          </div>
-        </MenuItemWrapper>
-
-        <MenuItemWrapper title='Settings' isOpen={false}>
-          <NumberInput name="Line spacing" value={tableLineHeight} maxValue={50} minValue={10} step={1} hidden={false} onChange={setTableLineHeight}/>
-        </MenuItemWrapper>
+      <div className={clsx(
+        "flex flex-col p-4 w-1/3 h-80 rounded-lg shadow-2xl border-neutral-300 border-1 justify-between",
+        theme.isDark ? 'bg-neutral-800' : 'bg-white'
+      )}>
+        <div className="flex flex-col">
+        <span className="w-full text-lg font-semibold text-neutral-500">SETTINGS</span>
+        <div className="flex flex-col gap-2 px-4 pt-4">
+          <NumberInput
+            name="Table line spacing"
+            value={settingsState.tableLineHeight}
+            maxValue={50}
+            minValue={10}
+            step={1}
+            hidden={false}
+            onChange={(v) => {settingsDispatch({type:"SET_TABLE_LINE_HEIGHT", payload:v})}}
+          />
+          <SettingsCheckbox
+            key="state"
+            label="Keep state on reload"
+            isChecked={settingsState.saveState}
+            onChange={() => {settingsDispatch({type:"TOGGLE_SAVE_STATE"})}}
+          />
+        </div>
+        </div>
+        <button
+          className={"bg-fuchsia-800 !text-white !font-semibold !rounded-md"}
+          onClick={() => {appDispatch({type: "CLOSE_SETTINGS"})}}
+        >Close</button>
       </div>
     </div>
   );

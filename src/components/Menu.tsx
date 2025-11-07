@@ -23,7 +23,7 @@ export function MenuItemWrapper({ title, isOpen, children }: WrapperProps) {
   return (
     <div
      className={clsx(
-       'flex flex-col py-2 select-none border-t-1',
+       'flex flex-col py-2 select-none',
        theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200'
      )}
     >
@@ -34,7 +34,7 @@ export function MenuItemWrapper({ title, isOpen, children }: WrapperProps) {
         </div>
       </div>
       {open && (
-        <div className="flex flex-col gap-1 mx-4 mt-2">{children}</div>
+        <div className="flex flex-col gap-1 mt-2">{children}</div>
       )}
     </div>
   );

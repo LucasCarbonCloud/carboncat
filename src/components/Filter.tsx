@@ -53,7 +53,7 @@ export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen, options
   return (
     <div
      className={clsx(
-       'flex flex-col py-2 select-none border-t-1',
+       'flex flex-col py-2 select-none',
        theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200'
      )}
     >

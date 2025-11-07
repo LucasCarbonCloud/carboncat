@@ -7,7 +7,7 @@ import dayjs from 'dayjs';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faCopy, faCode, faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
-import { faGolang, faPython, faHackerrank} from '@fortawesome/free-brands-svg-icons';
+import { faGolang, faPython, faHackerrank, faReact} from '@fortawesome/free-brands-svg-icons';
 import { SimpleOptions } from 'types/filters';
 import { stringToDarkColor, timeAgo } from 'utils/functions';
 
@@ -41,6 +41,7 @@ export const LogDetails: React.FC<LogDetailsProps> = ({ options, fields, rowInde
     python: faPython,
     go: faGolang,
     haskell: faHackerrank,
+    react: faReact,
     other: faCode
   } as const;
 
@@ -48,6 +49,7 @@ export const LogDetails: React.FC<LogDetailsProps> = ({ options, fields, rowInde
     python: "#FFD43B",
     go: "#00ADD8",
     haskell: "#453A62",
+    react: "#61DBFB",
     other: "#964B00"
   };
 
