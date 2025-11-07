@@ -7,10 +7,10 @@ import { Field } from '@grafana/data';
 import { Filter, FilterOperation } from 'types/filters';
 import { useSharedState } from './StateContext';
 
-const tokenRegex = /#([A-Za-z0-9_.-]+)(!?=)([^#]+)#/g;
+const tokenRegex = /#([A-Za-z0-9_.-]+)(!?=|~)([^#]+)#/g;
 const keyRegex = /#([A-Za-z0-9_.-]*)/g;
 const fullRegex = /#([A-Za-z0-9_.-=!]*)/g;
-const valueRegex = /#([A-Za-z0-9_.-]+)(!?=)([^#]*)/g;
+const valueRegex = /#([A-Za-z0-9_.-]+)(!?=|~)([^#]*)/g;
 
 export interface SearchbarProps {
   fields: Field[];
@@ -206,7 +206,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
           className="flex-grow p-3 rounded-lg outline-none"
           style={{ borderTopRightRadius: '0.5rem', borderBottomRightRadius: '0.5rem', background: "none" }}
           type="text"
-          placeholder="Filter your logs. Add filters with #key[!=/=]value#. Free text search the message."
+          placeholder="Filter your logs. Add filters with #key[!=/=/~]value#. Free text search the message."
           value={localValue}
           onChange={(e) => valueChange(e.target.value)}
           onKeyDown={(e) => onKeyDown(e)}

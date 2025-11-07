@@ -1,5 +1,5 @@
 
-export type FilterOperation = '=' | '!='
+export type FilterOperation = '=' | '!=' | '~'
 
 export interface SimpleOptions {
   traceUrl: string;
