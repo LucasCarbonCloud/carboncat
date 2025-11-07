@@ -30,7 +30,7 @@ export function useClickHouse()  {
 
 
   useEffect(() => {
-    if (!appState.sqlExpression) return;
+    if (!appState.sqlExpression) { return };
     refreshSqlData();
   }, [appState.sqlExpression, userState.timeFrom, userState.timeTo, userState.datasource]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -38,7 +38,6 @@ export function useClickHouse()  {
     if (!appState.sqlExpression) {
       return
     }
-    console.log("refresh")
 
     appDispatch({type:"LOADING"})
     Promise.all([

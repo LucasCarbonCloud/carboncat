@@ -165,3 +165,19 @@ return (
     </div>
   );
 }
+
+
+export interface SettingsCheckboxProps {
+  label: string;
+  isChecked: boolean;
+  onChange: () => void;
+}
+
+export const SettingsCheckbox: React.FC<SettingsCheckboxProps> = ({ label, isChecked, onChange }) => {
+  return (
+    <div className={`w-full flex gap-2 justify-between`}>
+      <label key={label}>{label}</label>
+      <input type="checkbox" value={label} checked={isChecked} onChange={() => onChange()} />
+    </div>
+  );
+};

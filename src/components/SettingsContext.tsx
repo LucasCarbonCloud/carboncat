@@ -3,15 +3,18 @@ import React, { createContext, useContext, useReducer, ReactNode, Dispatch, useE
 interface SettingsState {
   tableLineHeight: number;
   sidebarOpen: boolean;
+  saveState: boolean;
 }
 
 const initialSettingsState: SettingsState = {
   tableLineHeight: 35,
   sidebarOpen: true,
+  saveState: true,
 };
 
 type SettingsAction =
   | { type: 'SET_TABLE_LINE_HEIGHT'; payload: number }
+  | { type: 'TOGGLE_SAVE_STATE'; }
   | { type: 'TOGGLE_SIDEBAR' };
 
 function settingsReducer(state: SettingsState, action: SettingsAction): SettingsState {
@@ -20,6 +23,8 @@ function settingsReducer(state: SettingsState, action: SettingsAction): Settings
       return { ...state, tableLineHeight: action.payload };
     case 'TOGGLE_SIDEBAR':
       return { ...state, sidebarOpen: !state.sidebarOpen };
+    case 'TOGGLE_SAVE_STATE':
+      return { ...state, saveState: !state.saveState};
     default:
       return state;
   }

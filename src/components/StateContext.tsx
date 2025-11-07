@@ -6,6 +6,7 @@ import { Mode } from "types/state";
 import { parseTimeRangeRaw } from "utils/functions";
 import { GenerateURLParams } from "utils/url";
 import { DATASOURCES } from "utils/variables";
+import { useSettings } from "./SettingsContext";
 
 interface UserState {
   mode: Mode;
@@ -69,8 +70,6 @@ type UserAction =
   | { type: "FILTER_ADD"; payload: Filter}
   | { type: "FILTER_ONLY"; payload: Filter}
   | { type: "SET_TIMERANGE"; payload: TimeRange}
-  // | { type: "SET_TIMERANGE_FROM"; payload: string | DateTime}
-  // | { type: "SET_TIMERANGE_TO"; payload: string | DateTime}
   | { type: "SET_DATASOURCE"; payload: string}
   | { type: "SET_LOGLEVELS"; payload: string[]}
   | { type: "SET_REFRESH_INTERVAL"; payload: string}
@@ -114,14 +113,8 @@ function userReducer(state: UserState, action: UserAction): UserState {
       return {...state, filters: handleFilterChange(state.filters, action.payload, "add")};
     case "FILTER_ONLY":
       return {...state, filters: handleFilterChange(state.filters, action.payload, "only")};
-    // case "SET_TIMERANGE":
-    //   return {...state, timeRange: action.payload};
     case "SET_TIMERANGE":
       return {...state, timeFrom: parseTimeRangeRaw(action.payload.raw.from), timeTo: parseTimeRangeRaw(action.payload.raw.to)};
-    // case "SET_TIMERANGE_FROM":
-    //   return {...state, timeFrom: parseTimeRangeRaw(action.payload)};
-    // case "SET_TIMERANGE_TO":
-    //   return {...state, timeTo: parseTimeRangeRaw(action.payload)};
     case "SET_DATASOURCE":
       return {...state, datasource: action.payload};
     case "SET_LOGLEVELS":
@@ -184,13 +177,20 @@ const StateContext = createContext<StateContextType | undefined>(undefined);
 export function StateProvider({ children }: { children: ReactNode }) {
   const [searchParams, setSearchParams] = useSearchParams()
 
-  const [userState, userDispatch] = useReducer(userReducer, userStateFromQueryParams(searchParams));
+  const { settingsState } = useSettings()
+
+  const [userState, userDispatch] = useReducer(userReducer, userStateFromQueryParams(searchParams, settingsState.saveState));
   const [appState, appDispatch] = useReducer(appReducer, initialAppState);
 
   useEffect(() => {
     const params = GenerateURLParams(userState, appState, false)
     setSearchParams(params, { replace: true });
-  }, [userState, setSearchParams]);
+
+    if (settingsState.saveState) {
+      localStorage.setItem("carboncat.userState", JSON.stringify(userState));
+    }
+
+  }, [userState, setSearchParams, settingsState.saveState]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     appDispatch({type:"SET_ABSOLUTE_TIMERANGE", payload:{from:userState.timeFrom, to:userState.timeTo}})
@@ -207,8 +207,14 @@ export function useSharedState(): StateContextType {
   return context;
 }
 
-const userStateFromQueryParams = (u: URLSearchParams): UserState => {
-  let us = initialUserState
+
+function getUserState(): UserState{
+  const savedState =  localStorage.getItem("carboncat.userState");
+  return savedState ? JSON.parse(savedState) : initialUserState
+}
+
+const userStateFromQueryParams = (u: URLSearchParams, persistantUserState: boolean): UserState => {
+  let us = persistantUserState ? getUserState() : initialUserState
 
   if (u.get("search"))     { us.searchTerm = u.get("search") as string }
   if (u.get("sql"))        { us.sqlExpression = atob(u.get("sql") as string) }
