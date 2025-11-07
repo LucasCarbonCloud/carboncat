@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Field, TimeRange } from '@grafana/data';
+import { Field, rangeUtil, TimeRange } from '@grafana/data';
 import { RefreshPicker, TimeRangePicker, useTheme2 } from '@grafana/ui';
 import '../style.js';
 import { SimpleOptions } from 'types/filters';
@@ -20,7 +20,15 @@ import { GenerateURLParams } from 'utils/url';
 import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
 import { useSettings } from 'components/SettingsContext';
 import { SideMenu } from 'components/SideMenu';
+import { Settings } from 'components/Settings';
 
+// function parseTimeRangeRaw(t: string | DateTime): string {
+//   if (isDateTime(t)) {
+//     return t.toISOString()
+//   } else {
+//     return t
+//   }
+// }
 
 function PageOne() {
   const theme = useTheme2();
@@ -100,12 +108,15 @@ function PageOne() {
       { appState.error && (
         <Error/>
       )}
+      { appState.settingsOpen && (
+        <Settings/>
+      )}
       <SqlEditor/>
 
       <div className="flex gap-12 items-center">
         <Overview fields={appState.logFields} />
         <div className="w-full min-w-0" ref={chartContainerRef}>
-          {TimeSeriesBars({chartWidth, timeRange:userState.timeRange, fields:appState.levelFields, onChangeTimeRange:handleTimeRangeChange})}
+          {TimeSeriesBars({chartWidth, timeRange:rangeUtil.convertRawToRange({ from:userState.timeFrom, to:userState.timeTo }), fields:appState.levelFields, onChangeTimeRange:handleTimeRangeChange})}
         </div>
       </div>
 
@@ -123,12 +134,12 @@ function PageOne() {
           className='mr-2'
           options={{label: "Share link", disabled: false, icon:faArrowUpRightFromSquare}}
           onClick={async () => {
-            const params = GenerateURLParams(userState, true)
+            const params = GenerateURLParams(userState, appState, true)
             await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?${params.toString()}`);
           }}
         />
         <TimeRangePicker
-          value={userState.timeRange}
+          value={rangeUtil.convertRawToRange({ from:userState.timeFrom, to:userState.timeTo })}
           onChange={handleTimeRangeChange}
           onChangeTimeZone={() => {}}
           onMoveBackward={() => {}}

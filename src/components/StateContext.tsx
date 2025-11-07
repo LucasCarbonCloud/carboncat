@@ -3,6 +3,7 @@ import React, { createContext, useContext, useReducer, ReactNode, Dispatch, useE
 import { useSearchParams } from "react-router-dom";
 import { Filter } from "types/filters";
 import { Mode } from "types/state";
+import { parseTimeRangeRaw } from "utils/functions";
 import { GenerateURLParams } from "utils/url";
 import { DATASOURCES } from "utils/variables";
 
@@ -12,7 +13,8 @@ interface UserState {
   sqlExpression: string|null;
   searchTerm: string;
   filters: Filter[];
-  timeRange: TimeRange;
+  timeFrom: string;
+  timeTo: string;
   datasource: string;
   logLevels: string[];
   refreshInterval: string;
@@ -27,7 +29,8 @@ const initialUserState: UserState = {
   sqlExpression: null,
   searchTerm: "",
   filters: [],
-  timeRange: rangeUtil.convertRawToRange({ from:"now-5m", to:"now" }),
+  timeFrom: "now-5m",
+  timeTo: "now",
   datasource: DATASOURCES[0].value,
   logLevels: ['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL'],
   refreshInterval: "",
@@ -43,6 +46,8 @@ interface AppState {
   logFields: Field[];
   levelFields: Field[];
   error: string | null;
+  settingsOpen: boolean;
+  absoluteTimeRange: TimeRange | null;
 }
 
 const initialAppState: AppState = {
@@ -51,6 +56,8 @@ const initialAppState: AppState = {
   logFields: [],
   levelFields: [],
   error: "",
+  settingsOpen: false,
+  absoluteTimeRange: null,
 };
 
 type UserAction =
@@ -62,6 +69,8 @@ type UserAction =
   | { type: "FILTER_ADD"; payload: Filter}
   | { type: "FILTER_ONLY"; payload: Filter}
   | { type: "SET_TIMERANGE"; payload: TimeRange}
+  // | { type: "SET_TIMERANGE_FROM"; payload: string | DateTime}
+  // | { type: "SET_TIMERANGE_TO"; payload: string | DateTime}
   | { type: "SET_DATASOURCE"; payload: string}
   | { type: "SET_LOGLEVELS"; payload: string[]}
   | { type: "SET_REFRESH_INTERVAL"; payload: string}
@@ -79,7 +88,10 @@ type AppAction =
   | { type: "LOADING" }
   | { type: "NOT_LOADING" }
   | { type: "SET_ERROR"; payload: string }
-  | { type: "CLEAR_ERROR" };
+  | { type: "CLEAR_ERROR" }
+  | { type: "SET_ABSOLUTE_TIMERANGE"; payload: {from: string, to: string }}
+  | { type: "OPEN_SETTINGS" }
+  | { type: "CLOSE_SETTINGS" };
 
 
 function userReducer(state: UserState, action: UserAction): UserState {
@@ -102,8 +114,14 @@ function userReducer(state: UserState, action: UserAction): UserState {
       return {...state, filters: handleFilterChange(state.filters, action.payload, "add")};
     case "FILTER_ONLY":
       return {...state, filters: handleFilterChange(state.filters, action.payload, "only")};
+    // case "SET_TIMERANGE":
+    //   return {...state, timeRange: action.payload};
     case "SET_TIMERANGE":
-      return {...state, timeRange: action.payload};
+      return {...state, timeFrom: parseTimeRangeRaw(action.payload.raw.from), timeTo: parseTimeRangeRaw(action.payload.raw.to)};
+    // case "SET_TIMERANGE_FROM":
+    //   return {...state, timeFrom: parseTimeRangeRaw(action.payload)};
+    // case "SET_TIMERANGE_TO":
+    //   return {...state, timeTo: parseTimeRangeRaw(action.payload)};
     case "SET_DATASOURCE":
       return {...state, datasource: action.payload};
     case "SET_LOGLEVELS":
@@ -143,6 +161,12 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {...state, error: action.payload}
     case "CLEAR_ERROR":
       return {...state, error: null}
+    case "OPEN_SETTINGS":
+      return {...state, settingsOpen: true}
+    case "CLOSE_SETTINGS":
+      return {...state, settingsOpen: false}
+    case "SET_ABSOLUTE_TIMERANGE":
+      return {...state, absoluteTimeRange: rangeUtil.convertRawToRange({ from:action.payload.from, to:action.payload.to })}
     default:
       return state;
   }
@@ -164,9 +188,13 @@ export function StateProvider({ children }: { children: ReactNode }) {
   const [appState, appDispatch] = useReducer(appReducer, initialAppState);
 
   useEffect(() => {
-    const params = GenerateURLParams(userState, false)
+    const params = GenerateURLParams(userState, appState, false)
     setSearchParams(params, { replace: true });
   }, [userState, setSearchParams]);
+
+  useEffect(() => {
+    appDispatch({type:"SET_ABSOLUTE_TIMERANGE", payload:{from:userState.timeFrom, to:userState.timeTo}})
+  }, [userState.timeFrom, userState.timeTo]);
 
   return <StateContext.Provider value={{ userState, userDispatch, appState, appDispatch }}>{children}</StateContext.Provider>;
 }
@@ -187,7 +215,8 @@ const userStateFromQueryParams = (u: URLSearchParams): UserState => {
   if (u.get("mode"))       { us.mode = u.get("mode") as Mode }
   if (u.get("filters"))    { us.filters = JSON.parse(atob(u.get("filters") as string)) }
   if (u.get("from") && u.get("to")) {
-    us.timeRange = rangeUtil.convertRawToRange({ from:u.get("from") as string, to:u.get("to") as string })
+    us.timeFrom = u.get("from") as string
+    us.timeTo = u.get("to") as string
   }
   if (u.get("ds"))         { us.datasource = u.get("ds") as string }
   if (u.get("logLevels"))  { us.logLevels = JSON.parse(atob(u.get("logLevels") as string)) }

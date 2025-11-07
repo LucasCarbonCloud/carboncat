@@ -1,5 +1,5 @@
 import { getTemplateSrv } from '@grafana/runtime';
-import { VariableOption } from '@grafana/data';
+import { DateTime, isDateTime, VariableOption } from '@grafana/data';
 import dayjs from 'dayjs';
 import { Filter, FilterOperation } from 'types/filters';
 
@@ -170,4 +170,13 @@ export function getFieldNames(keys: string[], standardKeys: string[], labels: st
     return [...outList.filter((item) => item !== 'body'), ...labels, 'body'];
   }
   return [...outList, ...labels];
+}
+
+
+export function parseTimeRangeRaw(t: string | DateTime): string {
+  if (isDateTime(t)) {
+    return t.toISOString()
+  } else {
+    return t
+  }
 }

@@ -30,25 +30,27 @@ export function useClickHouse()  {
 
 
   useEffect(() => {
+    if (!appState.sqlExpression) return;
     refreshSqlData();
-  }, [appState.sqlExpression, userState.timeRange, userState.datasource]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [appState.sqlExpression, userState.timeFrom, userState.timeTo, userState.datasource]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshSqlData = () => {
     if (!appState.sqlExpression) {
       return
     }
+    console.log("refresh")
 
     appDispatch({type:"LOADING"})
     Promise.all([
       runLogQuery(
         userState.datasource,
-        rangeUtil.convertRawToRange(userState.timeRange.raw),
+        rangeUtil.convertRawToRange({ from:userState.timeFrom, to:userState.timeTo }),
         appState.sqlExpression,
         setLogFields
       ),
       runBars(
          userState.datasource,
-         rangeUtil.convertRawToRange(userState.timeRange.raw),
+         rangeUtil.convertRawToRange({ from:userState.timeFrom, to:userState.timeTo }),
          appState.sqlExpression,
          setLevelFields
        )
@@ -88,7 +90,7 @@ export function useClickHouse()  {
     }, intervalMs);
 
     return () => clearInterval(timer);
-  }, [userState.refreshInterval, userState.timeRange ]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [userState.refreshInterval, userState.timeFrom, userState.timeTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return refreshSqlData
 }
