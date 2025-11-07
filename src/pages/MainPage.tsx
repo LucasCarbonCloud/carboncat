@@ -17,18 +17,12 @@ import { useSharedState } from 'components/StateContext';
 import { Error } from 'components/Error';
 import { useClickHouse } from 'components/Clickhouse';
 import { GenerateURLParams } from 'utils/url';
-import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons';
+import { faArrowUpRightFromSquare, faCopy } from '@fortawesome/free-solid-svg-icons';
 import { useSettings } from 'components/SettingsContext';
 import { SideMenu } from 'components/SideMenu';
 import { Settings } from 'components/Settings';
+import { NotificationView } from 'components/NotificationView';
 
-// function parseTimeRangeRaw(t: string | DateTime): string {
-//   if (isDateTime(t)) {
-//     return t.toISOString()
-//   } else {
-//     return t
-//   }
-// }
 
 function PageOne() {
   const theme = useTheme2();
@@ -39,7 +33,7 @@ function PageOne() {
   const chartContainerRef = useRef<HTMLDivElement>(null);
 
   const { settingsState } = useSettings()
-  const { userState, userDispatch, appState } = useSharedState();
+  const { userState, userDispatch, appState, appDispatch } = useSharedState();
   const refreshSqlData = useClickHouse()
 
   useEffect(() => {
@@ -111,6 +105,7 @@ function PageOne() {
       { appState.settingsOpen && (
         <Settings/>
       )}
+      <NotificationView/>
       <SqlEditor/>
 
       <div className="flex gap-12 items-center">
@@ -136,6 +131,7 @@ function PageOne() {
           onClick={async () => {
             const params = GenerateURLParams(userState, appState, true)
             await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?${params.toString()}`);
+            appDispatch({type:"SET_NOTIFICATION", payload:{icon: faCopy, message: "URL has been copied to your clipboard"}})
           }}
         />
         <TimeRangePicker

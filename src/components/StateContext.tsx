@@ -7,6 +7,7 @@ import { parseTimeRangeRaw } from "utils/functions";
 import { GenerateURLParams } from "utils/url";
 import { DATASOURCES } from "utils/variables";
 import { useSettings } from "./SettingsContext";
+import { Notification } from "types/types";
 
 interface UserState {
   mode: Mode;
@@ -49,6 +50,7 @@ interface AppState {
   error: string | null;
   settingsOpen: boolean;
   absoluteTimeRange: TimeRange | null;
+  notification: Notification | null;
 }
 
 const initialAppState: AppState = {
@@ -59,6 +61,7 @@ const initialAppState: AppState = {
   error: "",
   settingsOpen: false,
   absoluteTimeRange: null,
+  notification: null,
 };
 
 type UserAction =
@@ -88,6 +91,8 @@ type AppAction =
   | { type: "NOT_LOADING" }
   | { type: "SET_ERROR"; payload: string }
   | { type: "CLEAR_ERROR" }
+  | { type: "SET_NOTIFICATION"; payload: Notification }
+  | { type: "CLEAR_NOTIFICATION" }
   | { type: "SET_ABSOLUTE_TIMERANGE"; payload: {from: string, to: string }}
   | { type: "OPEN_SETTINGS" }
   | { type: "CLOSE_SETTINGS" };
@@ -154,6 +159,10 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {...state, error: action.payload}
     case "CLEAR_ERROR":
       return {...state, error: null}
+    case "SET_NOTIFICATION":
+      return {...state, notification: action.payload}
+    case "CLEAR_NOTIFICATION":
+      return {...state, notification: null}
     case "OPEN_SETTINGS":
       return {...state, settingsOpen: true}
     case "CLOSE_SETTINGS":
