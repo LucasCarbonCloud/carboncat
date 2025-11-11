@@ -174,9 +174,7 @@ function PageOne() {
               <div className="w-12 h-12 rounded-full border-4 animate-spin border-[#28A0A6] border-t-transparent"></div>
             </div>
           )}
-          {userState.logDetails !== null && (
-            <LogDetails options={options} fields={appState.logFields} rowIndex={userState.logDetails} setLogDetails={handleSetLogDetails} />
-          )}
+          <LogDetails options={options} fields={appState.logFields} rowIndex={userState.logDetails} setLogDetails={handleSetLogDetails} />
         </div>
       </div>
     </div>
