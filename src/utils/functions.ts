@@ -108,7 +108,11 @@ export const generateFilterString = (filters: Filter[]) => {
       let logKey = key.split('.').slice(1).join('.');
       key = `LogAttributes['${logKey}']`;
     }
-    outStr += ` AND ( ${key} ${operation} '${value}' )`;
+    if (operation === '~') {
+      outStr += ` AND ( ${key} ILIKE '%${value}%' )`;
+    } else {
+      outStr += ` AND ( ${key} ${operation} '${value}' )`;
+    }
   }
   return outStr;
 };

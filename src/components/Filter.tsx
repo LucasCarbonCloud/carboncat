@@ -58,7 +58,11 @@ export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen, options
      )}
     >
       <div className={`w-full flex items-center justify-between`}>
-        <div className="cursor-pointer" onClick={() => onClick()}>
+        <div
+          className="cursor-pointer"
+          onClick={() => onClick()}
+          role="button"
+        >
           <FontAwesomeIcon className="w-6" icon={open ? faChevronDown : faChevronRight} />
           <span className="font-semibold uppercase">{showName}</span>
         </div>
@@ -69,6 +73,7 @@ export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen, options
             </span>
             <FontAwesomeIcon
               className="p-2 cursor-pointer text-neutral-300"
+              role="button"
               icon={faCircleXmark}
               onClick={resetOptions}
             />
@@ -145,6 +150,7 @@ const FilterContent: React.FC<FilterContentProps> = ({ options, selectedOptions,
               />
               <div
                 onClick={() => handleFieldChange(o, 'only')}
+                role="button"
                 className={clsx(
                   "flex items-center px-1 text-xs align-middle rounded-xl cursor-pointer text-neutral-400",
                   theme.isDark ? 'hover:bg-neutral-800' : 'hover:bg-neutral-200'

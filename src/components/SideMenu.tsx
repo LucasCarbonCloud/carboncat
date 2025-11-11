@@ -46,6 +46,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
           icon={faBars}
           className="cursor-pointer text-neutral-500 hover:text-neutral-400"
           title={settingsState.sidebarOpen ? 'Close Menu' : 'Open Menu'}
+          role="button"
           onClick={() => {
             settingsDispatch({ type: 'TOGGLE_SIDEBAR' });
           }}
@@ -54,6 +55,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
           icon={faCog}
           className="cursor-pointer text-neutral-500 hover:text-neutral-400"
           title="Settings"
+          role="button"
           onClick={() => {appDispatch({type: 'OPEN_SETTINGS'})}}
         />
       </div>

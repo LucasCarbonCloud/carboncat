@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Field } from '@grafana/data';
 import { FixedSizeList as List } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
@@ -108,6 +108,7 @@ const CellContent: React.FC<CellContentProps> = ({
             <FontAwesomeIcon
               className="cursor-pointer hover:text-neutral-600"
               icon={faMagnifyingGlassPlus}
+              role="button"
               title="Add label to filter"
               onClick={(e) => {
                 e.stopPropagation();
@@ -116,6 +117,7 @@ const CellContent: React.FC<CellContentProps> = ({
             />
             <FontAwesomeIcon
               className="cursor-pointer hover:text-neutral-600"
+              role="button"
               icon={faMagnifyingGlassMinus}
               title="Remove label from filter"
               onClick={(e) => {
@@ -125,6 +127,7 @@ const CellContent: React.FC<CellContentProps> = ({
             />
             <FontAwesomeIcon
               className="cursor-pointer hover:text-neutral-600"
+              role="button"
               icon={faMagnifyingGlass}
               title="View only this label"
               onClick={(e) => {
@@ -146,9 +149,11 @@ const CellContent: React.FC<CellContentProps> = ({
   if (columnName === 'traceID') {
     return (
       <div className="relative font-mono text-sm hover:underline truncate group">
-        <a href={options.traceUrl.replace('{{ traceID }}', displayValue)} target="_blank" rel="noreferrer">
-          <span className="block truncate">{displayValue}</span>
-        </a>
+        { displayValue &&
+          <a href={options.traceUrl.replace('{{ traceID }}', displayValue)} target="_blank" rel="noreferrer">
+            <span className="block truncate">{displayValue}</span>
+          </a>
+        }
         <div
           className={clsx(
             'group-hover:flex hidden gap-1 absolute right-0 top-0 bg-gradient-to-l pl-20 pr-1 justify-end',
@@ -157,6 +162,7 @@ const CellContent: React.FC<CellContentProps> = ({
         >
           <FontAwesomeIcon
             className="cursor-pointer hover:text-neutral-600"
+            role="button"
             icon={faMagnifyingGlassPlus}
             title="Add label to filter"
             onClick={(e) => {
@@ -166,6 +172,7 @@ const CellContent: React.FC<CellContentProps> = ({
           />
           <FontAwesomeIcon
             className="cursor-pointer hover:text-neutral-600"
+            role="button"
             icon={faMagnifyingGlassMinus}
             title="Remove label from filter"
             onClick={(e) => {
@@ -175,6 +182,7 @@ const CellContent: React.FC<CellContentProps> = ({
           />
           <FontAwesomeIcon
             className="cursor-pointer hover:text-neutral-600"
+            role="button"
             icon={faMagnifyingGlass}
             title="View only this label"
             onClick={(e) => {
@@ -198,6 +206,7 @@ const CellContent: React.FC<CellContentProps> = ({
       >
         <FontAwesomeIcon
           className="cursor-pointer hover:text-neutral-600"
+          role="button"
           icon={faMagnifyingGlassPlus}
           title="Add label to filter"
           onClick={(e) => {
@@ -207,6 +216,7 @@ const CellContent: React.FC<CellContentProps> = ({
         />
         <FontAwesomeIcon
           className="cursor-pointer hover:text-neutral-600"
+          role="button"
           icon={faMagnifyingGlassMinus}
           title="Remove label from filter"
           onClick={(e) => {
@@ -216,6 +226,7 @@ const CellContent: React.FC<CellContentProps> = ({
         />
         <FontAwesomeIcon
           className="cursor-pointer hover:text-neutral-600"
+          role="button"
           icon={faMagnifyingGlass}
           title="View only this label"
           onClick={(e) => {
@@ -249,25 +260,65 @@ export const Table: React.FC<TableProps> = ({
   // const rowCount = fields[0].values.length;
 
   // Calculate column widths - body column gets most space
-  const columnWidths = useMemo(() => {
+  const [columnWidths, setColumnWidths] = useState<{ [key: string]: string }>(() => {
     const widths: { [key: string]: string } = {};
     keys.forEach((key) => {
-      if (key === 'body') {
-        widths[key] = 'minmax(300px, 1fr)'; // Body gets remaining space
-      } else if (key === 'timestamp') {
-        widths[key] = '180px'; // Fixed width for timestamp
-      } else if (key === 'level') {
-        widths[key] = '10px'; // Fixed width for level
-      } else if (key === 'traceID') {
-        widths[key] = '200px'; // Fixed width for traceID
-      } else {
-        widths[key] = '150px'; // Default width for other columns
-      }
+      if (key === 'timestamp') { widths[key] = '180px';}
+      else if (key === 'level') { widths[key] = '10px';}
+      else if (key === 'traceID') { widths[key] = '200px';}
+      else if (key === 'body') { widths[key] = 'minmax(300px, 1fr)';} // fills remaining space
+      else { widths[key] = '150px';}
     });
     return widths;
+  });
+
+  useEffect(() => {
+    setColumnWidths((prev) => {
+      const newWidths: { [key: string]: string } = { ...prev };
+
+      keys.forEach((key) => {
+        if (!(key in newWidths)) {
+          // default width logic
+          if (key === 'timestamp') { newWidths[key] = '180px';}
+          else if (key === 'level') { newWidths[key] = '10px';}
+          else if (key === 'traceID') { newWidths[key] = '200px';}
+          else if (key === 'body') { newWidths[key] = 'minmax(300px, 1fr)';}
+          else { newWidths[key] = '150px';}
+        }
+      });
+
+      return newWidths;
+    });
   }, [keys]);
 
-  const gridTemplateColumns = keys.map((key) => columnWidths[key]).join(' ');
+  const handleMouseDown = (key: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    const startX = e.clientX;
+
+    // get starting width in px
+    const startWidth =
+      columnWidths[key].endsWith('fr') || columnWidths[key].startsWith('minmax')
+        ? (e.currentTarget.parentElement?.getBoundingClientRect().width || 300)
+        : parseInt(columnWidths[key]);
+
+    const onMouseMove = (moveEvent: MouseEvent) => {
+      const deltaX = moveEvent.clientX - startX;
+      setColumnWidths((prev) => ({
+        ...prev,
+        [key]: `${Math.max(50, startWidth + deltaX)}px`,
+      }));
+    };
+
+    const onMouseUp = () => {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  };
+
+  const gridTemplateColumns = keys.map((k) => columnWidths[k]).join(' ');
 
   const sortedRowIndices = useMemo(() => {
     const keyIndexMap = fields.reduce((acc, field, idx) => {
@@ -340,6 +391,7 @@ export const Table: React.FC<TableProps> = ({
           paddingLeft: '0.75rem',
           paddingRight: '0.75rem',
         }}
+        role="button"
         onClick={() => setLogDetails(rowIndex)}
         className={clsx(
           'cursor-pointer border-b-1 text-sm',
@@ -401,22 +453,28 @@ export const Table: React.FC<TableProps> = ({
           <div
             key={key}
             className={clsx(
-              'cursor-pointer select-none py-3 px-2 overflow-hidden',
+              'cursor-pointer select-none overflow-hidden flex justify-between gap-3',
               theme.isDark ? 'hover:bg-gray-50/20' : 'hover:bg-gray-50'
             )}
-            onClick={() => {
-              if (key === sortField) {
-                setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
-              } else {
-                setSortField(key);
-                setSortDirection('asc');
-              }
-            }}
           >
-            <div className="flex justify-start items-center truncate">
+            <div
+              className="flex flex-grow justify-start items-center py-3 px-2 truncate"
+              onClick={() => {
+                if (key === sortField) {
+                  setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                } else {
+                  setSortField(key);
+                  setSortDirection('asc');
+                }
+              }}
+            >
               {sortField === key && <span className="mr-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>}
-          <span className="truncate">{prettifyHeaderNames(key, false)}</span>
+              <span className="truncate">{prettifyHeaderNames(key, false)}</span>
             </div>
+            <div
+              className="pl-4 w-0.5 hover:border-r-2 cursor-ew-resize hover:border-neutral-300"
+              onMouseDown={(e) => handleMouseDown(key, e)}
+            />
           </div>
         ))}
       </div>
