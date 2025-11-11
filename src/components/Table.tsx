@@ -242,6 +242,7 @@ export const Table: React.FC<TableProps> = ({
   const [sortField, setSortField] = useState<string>('timestamp');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
 
+
   let rowCount = 0
   if (fields.length > 0) {
   rowCount = fields[0].values.length;
@@ -249,25 +250,70 @@ export const Table: React.FC<TableProps> = ({
   // const rowCount = fields[0].values.length;
 
   // Calculate column widths - body column gets most space
-  const columnWidths = useMemo(() => {
-    const widths: { [key: string]: string } = {};
+const [columnWidths, setColumnWidths] = useState<{ [key: string]: string }>(() => {
+  const widths: { [key: string]: string } = {};
+  keys.forEach((key) => {
+    if (key === 'timestamp') widths[key] = '180px';
+    else if (key === 'level') widths[key] = '10px';
+    else if (key === 'traceID') widths[key] = '200px';
+    else if (key === 'body') widths[key] = 'minmax(300px, 1fr)'; // fills remaining space
+    else widths[key] = '150px';
+  });
+  return widths;
+});
+
+React.useEffect(() => {
+  setColumnWidths((prev) => {
+    const newWidths: { [key: string]: string } = { ...prev };
+
     keys.forEach((key) => {
-      if (key === 'body') {
-        widths[key] = 'minmax(300px, 1fr)'; // Body gets remaining space
-      } else if (key === 'timestamp') {
-        widths[key] = '180px'; // Fixed width for timestamp
-      } else if (key === 'level') {
-        widths[key] = '10px'; // Fixed width for level
-      } else if (key === 'traceID') {
-        widths[key] = '200px'; // Fixed width for traceID
-      } else {
-        widths[key] = '150px'; // Default width for other columns
+      if (!(key in newWidths)) {
+        // default width logic
+        if (key === 'timestamp') newWidths[key] = '180px';
+        else if (key === 'level') newWidths[key] = '10px';
+        else if (key === 'traceID') newWidths[key] = '200px';
+        else if (key === 'body') newWidths[key] = 'minmax(300px, 1fr)';
+        else newWidths[key] = '150px';
       }
     });
-    return widths;
-  }, [keys]);
 
-  const gridTemplateColumns = keys.map((key) => columnWidths[key]).join(' ');
+    return newWidths;
+  });
+}, [keys]);
+
+const handleMouseDown = (key: string, e: React.MouseEvent) => {
+  e.preventDefault();
+  const startX = e.clientX;
+
+  // get starting width in px
+  const startWidth =
+    columnWidths[key].endsWith('fr') || columnWidths[key].startsWith('minmax')
+      ? (e.currentTarget.parentElement?.getBoundingClientRect().width || 300)
+      : parseInt(columnWidths[key]);
+
+  const onMouseMove = (moveEvent: MouseEvent) => {
+    const deltaX = moveEvent.clientX - startX;
+    setColumnWidths((prev) => ({
+      ...prev,
+      [key]: `${Math.max(50, startWidth + deltaX)}px`,
+    }));
+  };
+
+  const onMouseUp = () => {
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+  };
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+};
+
+
+
+  // const gridTemplateColumns = keys.map((key) => columnWidths[key]).join(' ');
+  // const gridTemplateColumns = keys.map((k) => `${columnWidths[k]}px`).join(' ');
+const gridTemplateColumns = keys.map((k) => columnWidths[k]).join(' ');
+
 
   const sortedRowIndices = useMemo(() => {
     const keyIndexMap = fields.reduce((acc, field, idx) => {
@@ -401,7 +447,7 @@ export const Table: React.FC<TableProps> = ({
           <div
             key={key}
             className={clsx(
-              'cursor-pointer select-none py-3 px-2 overflow-hidden',
+              'cursor-pointer select-none overflow-hidden flex justify-between',
               theme.isDark ? 'hover:bg-gray-50/20' : 'hover:bg-gray-50'
             )}
             onClick={() => {
@@ -413,10 +459,14 @@ export const Table: React.FC<TableProps> = ({
               }
             }}
           >
-            <div className="flex justify-start items-center truncate">
+            <div className="flex justify-start items-center py-3 px-2 truncate">
               {sortField === key && <span className="mr-1">{sortDirection === 'asc' ? '↑' : '↓'}</span>}
-          <span className="truncate">{prettifyHeaderNames(key, false)}</span>
+              <span className="truncate">{prettifyHeaderNames(key, false)}</span>
             </div>
+<div
+  className="w-0.5 cursor-ew-resize hover:bg-neutral-300"
+  onMouseDown={(e) => handleMouseDown(key, e)}
+/>
           </div>
         ))}
       </div>
