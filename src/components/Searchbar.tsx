@@ -192,6 +192,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
                 <FontAwesomeIcon
                   icon={faXmark}
                   className="pl-1 cursor-pointer hover:text-neutral-300"
+                  role="button"
                   onClick={() => {
                     setToDeleteFilterIdx(-1);
                     userDispatch({type:"FILTER_RM", payload: f});
@@ -222,7 +223,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
             {filteredValues.map((v: string, idx: number) => (
               <div
                 key={'filterVals' + idx}
-              className={clsx(``, selectedIdx === idx ? (theme.isDark ? 'bg-neutral-50/10' : 'bg-black/10') : '')}
+                className={clsx(``, selectedIdx === idx ? (theme.isDark ? 'bg-neutral-50/10' : 'bg-black/10') : '')}
                 onMouseEnter={() => setSelectedIdx(idx)}
                 onClick={fillFilter}
               >
@@ -236,6 +237,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
             <FontAwesomeIcon
               title={"Open SQL Editor"}
               icon={faPenToSquare}
+              role="button"
               className={`text-lg cursor-pointer hover:text-neutral-300 pr-2`}
               onClick={() => {userDispatch({type:"OPEN_SQL_EDITOR"})}}
             />
@@ -243,6 +245,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
         <FontAwesomeIcon
           title={userState.mode === "sql"  ? 'Exit SQL-Mode' : "Enter SQL-Mode"}
           icon={faCode}
+          role="button"
           className={`text-lg cursor-pointer hover:text-neutral-300 ${userState.mode === "sql"  ? "text-fuchsia-600 drop-shadow drop-shadow-fuchsia-600/80" : ""}`}
           onClick={() => {
             if (userState.mode !== "sql" ) {

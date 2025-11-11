@@ -28,7 +28,11 @@ export function MenuItemWrapper({ title, isOpen, children }: WrapperProps) {
      )}
     >
       <div className={`w-full flex items-center justify-between`}>
-        <div className="cursor-pointer" onClick={() => onClick()}>
+        <div
+          className="cursor-pointer"
+          onClick={() => onClick()}
+          role="button"
+        >
           <FontAwesomeIcon className="w-6" icon={open ? faChevronDown : faChevronRight} />
           <span className="font-semibold uppercase">{title}</span>
         </div>

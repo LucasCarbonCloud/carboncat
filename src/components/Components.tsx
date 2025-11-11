@@ -90,16 +90,18 @@ export function ToggleButtonGroup({
   const theme = useTheme2();
 
 return (
-  <div className={clsx(
+  <div
+    className={clsx(
     "inline-flex mx-4 rounded-lg border ",
     theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200'
-  )}
+    )}
   >
      {options.map((option, idx) => (
         <div
           key={option.value}
           title={option.label}
           onClick={() => handleClick(option.value, option.disabled)}
+          role="button"
           className={[
             "flex items-center justify-center px-3 py-2 text-sm transition-colors",
             theme.isDark ? "hover:bg-neutral-500" : "hover:bg-neutral-100",
@@ -142,11 +144,13 @@ export function Button({
   const theme = useTheme2();
 
 return (
-  <div className={clsx(
+  <div
+    className={clsx(
     "inline-flex rounded-lg border ",
     theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200',
     className
-  )}
+    )}
+    role="button"
   >
         <div
           title={options.label}
