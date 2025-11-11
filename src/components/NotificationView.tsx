@@ -20,7 +20,7 @@ export const NotificationView: React.FC<NotificationViewProps> = () => {
       return () => clearTimeout(timer);
     }
     return
-  }, [appState.notification]);
+  }, [appState.notification]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <AnimatePresence>

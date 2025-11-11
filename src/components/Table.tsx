@@ -263,11 +263,11 @@ export const Table: React.FC<TableProps> = ({
   const [columnWidths, setColumnWidths] = useState<{ [key: string]: string }>(() => {
     const widths: { [key: string]: string } = {};
     keys.forEach((key) => {
-      if (key === 'timestamp') widths[key] = '180px';
-      else if (key === 'level') widths[key] = '10px';
-      else if (key === 'traceID') widths[key] = '200px';
-      else if (key === 'body') widths[key] = 'minmax(300px, 1fr)'; // fills remaining space
-      else widths[key] = '150px';
+      if (key === 'timestamp') { widths[key] = '180px';}
+      else if (key === 'level') { widths[key] = '10px';}
+      else if (key === 'traceID') { widths[key] = '200px';}
+      else if (key === 'body') { widths[key] = 'minmax(300px, 1fr)';} // fills remaining space
+      else { widths[key] = '150px';}
     });
     return widths;
   });
@@ -279,11 +279,11 @@ export const Table: React.FC<TableProps> = ({
       keys.forEach((key) => {
         if (!(key in newWidths)) {
           // default width logic
-          if (key === 'timestamp') newWidths[key] = '180px';
-          else if (key === 'level') newWidths[key] = '10px';
-          else if (key === 'traceID') newWidths[key] = '200px';
-          else if (key === 'body') newWidths[key] = 'minmax(300px, 1fr)';
-          else newWidths[key] = '150px';
+          if (key === 'timestamp') { newWidths[key] = '180px';}
+          else if (key === 'level') { newWidths[key] = '10px';}
+          else if (key === 'traceID') { newWidths[key] = '200px';}
+          else if (key === 'body') { newWidths[key] = 'minmax(300px, 1fr)';}
+          else { newWidths[key] = '150px';}
         }
       });
 
