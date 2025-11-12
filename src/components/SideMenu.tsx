@@ -88,7 +88,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
       >
         <SavedView isSelected={appState.currentView === 'default'} name="default" />
         {Object.entries(settingsState.savedViews).map(([name]) => (
-          <SavedView isSelected={appState.currentView === name} name={name} />
+          <SavedView key={name} isSelected={appState.currentView === name} name={name} />
         ))}
       </div>
 

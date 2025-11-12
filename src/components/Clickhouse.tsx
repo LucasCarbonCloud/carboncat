@@ -6,6 +6,8 @@ import { Field, rangeUtil } from "@grafana/data";
 export function useClickHouse()  {
   const {userState, appState, appDispatch } = useSharedState();
 
+  const lastRequestRef = useRef<string | null>(null);
+
   const setLogFields = (f: Field[]) => {
     appDispatch({type:"SET_LOG_FIELDS", payload: f})
   }
@@ -14,50 +16,31 @@ export function useClickHouse()  {
     appDispatch({type:"SET_LEVEL_FIELDS", payload: f})
   }
 
-// 1️⃣ Generate and dispatch SQL whenever userState changes
-useEffect(() => {
-  const sqlExpr =
-    userState.mode === "sql"
-      ? (userState.sqlExpression as string)
-      : generateLogQuery(
-          userState.searchTerm,
-          userState.filters,
-          userState.logLevels
-        );
+  useEffect(() => {
+    const sqlExpr =
+      userState.mode === "sql"
+        ? (userState.sqlExpression as string)
+        : generateLogQuery(
+            userState.searchTerm,
+            userState.filters,
+            userState.logLevels
+          );
 
-  appDispatch({ type: "SET_SQL", payload: sqlExpr });
-}, [
-  userState.mode,
-  userState.sqlExpression,
-  userState.searchTerm,
-  userState.filters,
-  userState.logLevels,
-]);
+    appDispatch({ type: "SET_SQL", payload: sqlExpr });
+  }, [userState.mode, userState.sqlExpression, userState.searchTerm, userState.filters, userState.logLevels]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    const { sqlExpression } = appState;
+    const { datasource, timeFrom, timeTo } = userState;
+    if (!sqlExpression || !datasource || !timeFrom || !timeTo) { return };
 
-// 2️⃣ Refresh data whenever SQL or time/datasource changes
-const lastRequestRef = useRef<string | null>(null);
+    const requestKey = JSON.stringify({ sqlExpression, datasource, timeFrom, timeTo });
 
-useEffect(() => {
-  const { sqlExpression } = appState;
-  const { datasource, timeFrom, timeTo } = userState;
-  if (!sqlExpression || !datasource || !timeFrom || !timeTo) return;
+    if (lastRequestRef.current === requestKey) { return };
+    lastRequestRef.current = requestKey;
 
-  // Build a composite signature of the request context
-  const requestKey = JSON.stringify({ sqlExpression, datasource, timeFrom, timeTo });
-
-  // Skip only if *exactly* the same request context as last time
-  if (lastRequestRef.current === requestKey) return;
-  lastRequestRef.current = requestKey;
-
-  console.log("run", sqlExpression);
-  refreshSqlData();
-}, [
-  appState.sqlExpression,
-  userState.datasource,
-  userState.timeFrom,
-  userState.timeTo,
-]);
+    refreshSqlData();
+  }, [appState.sqlExpression, userState.datasource, userState.timeFrom, userState.timeTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshSqlData = () => {
     if (!appState.sqlExpression) {

@@ -227,7 +227,6 @@ export function StateProvider({ children }: { children: ReactNode }) {
   }, [userState.timeFrom, userState.timeTo]);
 
   useEffect(() => {
-    console.log(appState.currentView)
     if (!appState.currentView) {
       return
     }
@@ -241,9 +240,8 @@ export function StateProvider({ children }: { children: ReactNode }) {
         return
       }
     }
-    console.log(settingsState.savedViews[appState.currentView].logLevels)
     userDispatch({type:"SET_STATE", payload:settingsState.savedViews[appState.currentView]})
-  }, [appState.currentView]);
+  }, [appState.currentView, settingsState.savedViews]);
 
   return <StateContext.Provider value={{ userState, userDispatch, appState, appDispatch }}>{children}</StateContext.Provider>;
 }
