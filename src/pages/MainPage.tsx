@@ -17,11 +17,12 @@ import { useSharedState } from 'components/StateContext';
 import { Error } from 'components/Error';
 import { useClickHouse } from 'components/Clickhouse';
 import { GenerateURLParams } from 'utils/url';
-import { faArrowUpRightFromSquare, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { faArrowUpRightFromSquare, faCopy, faSave } from '@fortawesome/free-solid-svg-icons';
 import { useSettings } from 'components/SettingsContext';
 import { SideMenu } from 'components/SideMenu';
 import { Settings } from 'components/Settings';
 import { NotificationView } from 'components/NotificationView';
+import { SaveView } from 'components/SaveView';
 
 
 function PageOne() {
@@ -105,6 +106,9 @@ function PageOne() {
       { appState.settingsOpen && (
         <Settings/>
       )}
+      { appState.saveViewOpen && (
+        <SaveView/>
+      )}
       <NotificationView/>
       <SqlEditor/>
 
@@ -132,6 +136,13 @@ function PageOne() {
             const params = GenerateURLParams(userState, appState, true)
             await navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?${params.toString()}`);
             appDispatch({type:"SET_NOTIFICATION", payload:{icon: faCopy, message: "URL has been copied to your clipboard"}})
+          }}
+        />
+        <Button
+          className='mr-2'
+          options={{label: "Save View", disabled: false, icon:faSave}}
+          onClick={async () => {
+            appDispatch({type:"OPEN_SAVE_VIEW"})
           }}
         />
         <TimeRangePicker

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faMagnifyingGlass, faXmark, faCode, faPenToSquare } from '@fortawesome/free-solid-svg-icons';
 import { useTheme2 } from '@grafana/ui';
@@ -27,6 +27,8 @@ export const Searchbar: React.FC<SearchbarProps> = ({
   const [filteredValues, setFilteredValues] = useState<string[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
   const [toDeleteFilterIdx, setToDeleteFilterIdx] = useState(-1);
+
+  const skipLocalValueEffect = useRef(false);
 
   const theme = useTheme2();
 
@@ -58,13 +60,22 @@ export const Searchbar: React.FC<SearchbarProps> = ({
 
 
   useEffect(() => {
+    skipLocalValueEffect.current = true
     const timer = setTimeout(() => {
       const filteredVal = localValue.replace(/#\S*\s?/g, '').trim();
       userDispatch({type: 'SET_SEARCHTERM', payload: filteredVal})
+      skipLocalValueEffect.current = false
     }, 500);
 
     return () => clearTimeout(timer);
   }, [localValue]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (skipLocalValueEffect.current) { return }
+    setLocalValue(userState.searchTerm)
+  }, [userState.searchTerm])
+
+
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && localValue === '') {
@@ -173,7 +184,9 @@ export const Searchbar: React.FC<SearchbarProps> = ({
       </div>
     <div className={clsx(
       `relative w-full flex items-center rounded-r-lg`,
-      userState.mode === "sql" ? "bg-gray-100" : theme.isDark ? 'bg-neutral-900' : 'bg-white',
+      userState.mode === "sql" ?
+        theme.isDark ? 'bg-neutral-500' : "bg-gray-100" :
+        theme.isDark ? 'bg-neutral-900' : 'bg-white',
     )}>
         {userState.filters.length > 0 && (
           <div className={clsx(`text-xs pl-2 flex gap-1 font-bold`)}>

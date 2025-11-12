@@ -36,17 +36,9 @@ export function generateLogQuery(searchTerm: string, filters: Filter[], logLevel
   return rawSql
 }
 
-let running = false;
 export async function runLogQuery(dsName: string, timeRange: TimeRange, rawSql: string, setData: (data: Field[]) => void): Promise<void> {
-  if (running) {
-    console.warn("runLogQuery: skipped — already running");
-    return;
-  }
-
-  running = true;
   const fields = await runQuery(rawSql, dsName, timeRange);
   setData(fields);
-  running = false;
 }
 
 

@@ -9,7 +9,7 @@ import { DATASOURCES } from "utils/variables";
 import { useSettings } from "./SettingsContext";
 import { Notification } from "types/types";
 
-interface UserState {
+export interface UserState {
   mode: Mode;
   sqlEditorOpen: boolean;
   sqlExpression: string|null;
@@ -49,8 +49,10 @@ interface AppState {
   levelFields: Field[];
   error: string | null;
   settingsOpen: boolean;
+  saveViewOpen: boolean;
   absoluteTimeRange: TimeRange | null;
   notification: Notification | null;
+  currentView: string;
 }
 
 const initialAppState: AppState = {
@@ -60,8 +62,10 @@ const initialAppState: AppState = {
   levelFields: [],
   error: "",
   settingsOpen: false,
+  saveViewOpen: false,
   absoluteTimeRange: null,
   notification: null,
+  currentView: "default",
 };
 
 type UserAction =
@@ -81,7 +85,8 @@ type UserAction =
   | { type: "TOGGLE_LABEL"; payload: string}
   | { type: "TOGGLE_FIELD"; payload: string}
   | { type: "OPEN_SQL_EDITOR" }
-  | { type: "CLOSE_SQL_EDITOR" };
+  | { type: "CLOSE_SQL_EDITOR" }
+  | { type: "SET_STATE"; payload: UserState};
 
 type AppAction =
   | { type: "SET_SQL"; payload: string }
@@ -90,12 +95,15 @@ type AppAction =
   | { type: "LOADING" }
   | { type: "NOT_LOADING" }
   | { type: "SET_ERROR"; payload: string }
+  | { type: "SET_CURRENT_VIEW"; payload: string }
   | { type: "CLEAR_ERROR" }
   | { type: "SET_NOTIFICATION"; payload: Notification }
   | { type: "CLEAR_NOTIFICATION" }
   | { type: "SET_ABSOLUTE_TIMERANGE"; payload: {from: string, to: string }}
   | { type: "OPEN_SETTINGS" }
-  | { type: "CLOSE_SETTINGS" };
+  | { type: "CLOSE_SETTINGS" }
+  | { type: "OPEN_SAVE_VIEW" }
+  | { type: "CLOSE_SAVE_VIEW" };
 
 
 function userReducer(state: UserState, action: UserAction): UserState {
@@ -138,6 +146,8 @@ function userReducer(state: UserState, action: UserAction): UserState {
       return {...state, selectedFields: state.selectedFields.includes(action.payload)
               ? state.selectedFields.filter((v) => v !== action.payload)
               : [...state.selectedFields, action.payload]};
+    case "SET_STATE":
+      return { ...state, ...action.payload };
     default:
       return state;
   }
@@ -163,10 +173,16 @@ function appReducer(state: AppState, action: AppAction): AppState {
       return {...state, notification: action.payload}
     case "CLEAR_NOTIFICATION":
       return {...state, notification: null}
+    case "SET_CURRENT_VIEW":
+      return {...state, currentView: action.payload}
     case "OPEN_SETTINGS":
       return {...state, settingsOpen: true}
     case "CLOSE_SETTINGS":
       return {...state, settingsOpen: false}
+    case "OPEN_SAVE_VIEW":
+      return {...state, saveViewOpen: true}
+    case "CLOSE_SAVE_VIEW":
+      return {...state, saveViewOpen: false}
     case "SET_ABSOLUTE_TIMERANGE":
       return {...state, absoluteTimeRange: rangeUtil.convertRawToRange({ from:action.payload.from, to:action.payload.to })}
     default:
@@ -195,15 +211,37 @@ export function StateProvider({ children }: { children: ReactNode }) {
     const params = GenerateURLParams(userState, appState, false)
     setSearchParams(params, { replace: true });
 
+    if (appState.currentView === "default") {
+      localStorage.setItem("carboncat.lastDefaultUserState", JSON.stringify(userState));
+    }
+
     if (settingsState.saveState) {
       localStorage.setItem("carboncat.userState", JSON.stringify(userState));
     }
 
   }, [userState, setSearchParams, settingsState.saveState]); // eslint-disable-line react-hooks/exhaustive-deps
 
+
   useEffect(() => {
     appDispatch({type:"SET_ABSOLUTE_TIMERANGE", payload:{from:userState.timeFrom, to:userState.timeTo}})
   }, [userState.timeFrom, userState.timeTo]);
+
+  useEffect(() => {
+    if (!appState.currentView) {
+      return
+    }
+
+    if (appState.currentView === "default") {
+      const savedState =  localStorage.getItem("carboncat.lastDefaultUserState");
+      if (savedState) {
+        userDispatch({type:"SET_STATE", payload:JSON.parse(savedState)})
+        return
+      } else  {
+        return
+      }
+    }
+    userDispatch({type:"SET_STATE", payload:settingsState.savedViews[appState.currentView]})
+  }, [appState.currentView, settingsState.savedViews]);
 
   return <StateContext.Provider value={{ userState, userDispatch, appState, appDispatch }}>{children}</StateContext.Provider>;
 }

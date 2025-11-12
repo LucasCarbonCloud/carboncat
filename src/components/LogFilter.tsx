@@ -4,50 +4,34 @@ import { faChevronDown, faChevronRight, faFilter, faCircleXmark } from '@fortawe
 import { FieldSelector } from './Components';
 import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
+import { useSharedState } from './StateContext';
 
-export interface FilterProps {
-  field: string;
+export interface LogFilterProps {
   showName: string;
-  isOpen: boolean;
-  options: string[];
-  selected: string[];
-  setFunc: (value: string[]) => void;
-  // onChange: (field: string) => void;
 }
 
-export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen, options, selected, setFunc }) => {
+export const LogFilter: React.FC<LogFilterProps> = ({ showName }) => {
   const theme = useTheme2();
+  const options=['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']
 
-
-
-  // const options = getOptionsForVariable(field);
-  // const selected = getValuesForVariable(field);
-
-  const [open, setOpen] = useState<boolean>(isOpen);
-  const [selectedOptions, setSelectedOptions] = useState<string[]>(selected);
-  // const [options, setOptions] = useState<string[]>(selected);
-
-  const onClick = () => {
-    setOpen(!open);
-  };
+  const { userState, userDispatch } = useSharedState();
+  const [open, setOpen] = useState<boolean>(true);
 
   const handleFieldChange = (value: string, op?: string) => {
     if (op === 'only') {
-      setSelectedOptions([value]);
-      setFunc([value])
+      userDispatch({type:"SET_LOGLEVELS", payload:[value]})
       return;
     }
-    const newSelected = selectedOptions.includes(value)
-      ? selectedOptions.filter((v) => v !== value)
-      : [...selectedOptions, value];
-    setSelectedOptions(newSelected);
-    setFunc(newSelected)
+
+    const newSelected = userState.logLevels.includes(value)
+      ? userState.logLevels.filter((v) => v !== value)
+      : [...userState.logLevels, value];
+
+    userDispatch({type:"SET_LOGLEVELS", payload:newSelected})
   };
 
   const resetOptions = () => {
-    setSelectedOptions([]);
-    setFunc([])
-    // locationService.partial({ [`var-${field}`]: ['All'] }, true);
+    userDispatch({type:"SET_LOGLEVELS", payload:options})
   };
 
   return (
@@ -60,16 +44,16 @@ export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen, options
       <div className={`w-full flex items-center justify-between`}>
         <div
           className="cursor-pointer"
-          onClick={() => onClick()}
+          onClick={() => {setOpen(!open)}}
           role="button"
         >
           <FontAwesomeIcon className="w-6" icon={open ? faChevronDown : faChevronRight} />
           <span className="font-semibold uppercase">{showName}</span>
         </div>
-        {selectedOptions.length > 0 && (
+        { userState.logLevels.length > 0 && (
           <div className="flex items-center text-neutral-400">
             <span>
-              {selectedOptions.length} of {options.length}
+              { userState.logLevels.length} of {options.length}
             </span>
             <FontAwesomeIcon
               className="p-2 cursor-pointer text-neutral-300"
@@ -81,7 +65,7 @@ export const Filter: React.FC<FilterProps> = ({ field, showName, isOpen, options
         )}
       </div>
       {open && (
-        <FilterContent options={options} selectedOptions={selectedOptions} handleFieldChange={handleFieldChange} />
+        <FilterContent options={options} selectedOptions={userState.logLevels} handleFieldChange={handleFieldChange} />
       )}
     </div>
   );
@@ -91,16 +75,12 @@ interface FilterContentProps {
   options: string[];
   selectedOptions: string[];
   handleFieldChange: (option: string, op?: string) => void;
-  // field: string;
-  // isChecked: boolean;
-  // onChange: (field: string) => void;
 }
 
 const FilterContent: React.FC<FilterContentProps> = ({ options, selectedOptions, handleFieldChange }) => {
   const theme = useTheme2();
 
   const [searchTerm, setSearchTerm] = useState<string>('');
-  // const [open, setOpen] = useState<boolean>(false);
 
   const resetSearchTerm = () => {
     setSearchTerm('');

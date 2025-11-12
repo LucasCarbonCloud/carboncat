@@ -1,10 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useSharedState } from "./StateContext";
 import { generateLogQuery, runBars, runLogQuery } from "utils/clickhouse";
 import { Field, rangeUtil } from "@grafana/data";
 
 export function useClickHouse()  {
   const {userState, appState, appDispatch } = useSharedState();
+
+  const lastRequestRef = useRef<string | null>(null);
 
   const setLogFields = (f: Field[]) => {
     appDispatch({type:"SET_LOG_FIELDS", payload: f})
@@ -15,24 +17,30 @@ export function useClickHouse()  {
   }
 
   useEffect(() => {
-    if (userState.mode === "sql" ) {
-      const sqlExpr = userState.sqlExpression as string
-      appDispatch({type: 'SET_SQL', payload:sqlExpr})
-    } else {
-      const sqlExpr = generateLogQuery(
-        userState.searchTerm,
-        userState.filters,
-        userState.logLevels,
-        )
-      appDispatch({type: 'SET_SQL', payload:sqlExpr})
-    }
-  }, [userState.sqlExpression, userState.searchTerm, userState.filters, userState.logLevels]); // eslint-disable-line react-hooks/exhaustive-deps
+    const sqlExpr =
+      userState.mode === "sql"
+        ? (userState.sqlExpression as string)
+        : generateLogQuery(
+            userState.searchTerm,
+            userState.filters,
+            userState.logLevels
+          );
 
+    appDispatch({ type: "SET_SQL", payload: sqlExpr });
+  }, [userState.mode, userState.sqlExpression, userState.searchTerm, userState.filters, userState.logLevels]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!appState.sqlExpression) { return };
+    const { sqlExpression } = appState;
+    const { datasource, timeFrom, timeTo } = userState;
+    if (!sqlExpression || !datasource || !timeFrom || !timeTo) { return };
+
+    const requestKey = JSON.stringify({ sqlExpression, datasource, timeFrom, timeTo });
+
+    if (lastRequestRef.current === requestKey) { return };
+    lastRequestRef.current = requestKey;
+
     refreshSqlData();
-  }, [appState.sqlExpression, userState.timeFrom, userState.timeTo, userState.datasource]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [appState.sqlExpression, userState.datasource, userState.timeFrom, userState.timeTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshSqlData = () => {
     if (!appState.sqlExpression) {

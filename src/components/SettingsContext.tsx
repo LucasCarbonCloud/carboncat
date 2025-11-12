@@ -1,26 +1,43 @@
 import React, { createContext, useContext, useReducer, ReactNode, Dispatch, useEffect } from 'react';
+import { UserState } from './StateContext';
 
 interface SettingsState {
   tableLineHeight: number;
   sidebarOpen: boolean;
   saveState: boolean;
+  savedViews: Record<string, UserState>;
 }
 
 const initialSettingsState: SettingsState = {
   tableLineHeight: 35,
   sidebarOpen: true,
   saveState: true,
+  savedViews: {},
 };
 
 type SettingsAction =
-  | { type: 'SET_TABLE_LINE_HEIGHT'; payload: number }
+  | { type: 'SET_TABLE_LINE_HEIGHT'; payload: number; }
+  | { type: 'SAVE_VIEW'; payload: {name: string; state: UserState}; }
+  | { type: 'DELETE_VIEW'; payload: string; }
   | { type: 'TOGGLE_SAVE_STATE'; }
   | { type: 'TOGGLE_SIDEBAR' };
+
 
 function settingsReducer(state: SettingsState, action: SettingsAction): SettingsState {
   switch (action.type) {
     case 'SET_TABLE_LINE_HEIGHT':
       return { ...state, tableLineHeight: action.payload };
+    case 'SAVE_VIEW':
+      return { ...state, savedViews: {
+        ...state.savedViews,
+        [action.payload.name]: action.payload.state,
+      }}
+    case 'DELETE_VIEW':
+      const sv = state.savedViews
+      delete sv[action.payload]
+      return { ...state, savedViews: {
+        ...sv,
+      }}
     case 'TOGGLE_SIDEBAR':
       return { ...state, sidebarOpen: !state.sidebarOpen };
     case 'TOGGLE_SAVE_STATE':
