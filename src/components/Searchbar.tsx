@@ -184,7 +184,9 @@ export const Searchbar: React.FC<SearchbarProps> = ({
       </div>
     <div className={clsx(
       `relative w-full flex items-center rounded-r-lg`,
-      userState.mode === "sql" ? "bg-gray-100" : theme.isDark ? 'bg-neutral-900' : 'bg-white',
+      userState.mode === "sql" ?
+        theme.isDark ? 'bg-neutral-500' : "bg-gray-100" :
+        theme.isDark ? 'bg-neutral-900' : 'bg-white',
     )}>
         {userState.filters.length > 0 && (
           <div className={clsx(`text-xs pl-2 flex gap-1 font-bold`)}>

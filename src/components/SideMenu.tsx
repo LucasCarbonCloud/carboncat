@@ -63,7 +63,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
           <FontAwesomeIcon
             icon={faTrashCan}
             className={clsx(
-              appState.currentView === "default" ? "cursor-not-allowed text-neutral-200" : "cursor-pointer text-neutral-500 hover:text-neutral-400",
+              appState.currentView === "default" ? theme.isDark ? "cursor-not-allowed text-neutral-800"  : "cursor-not-allowed text-neutral-200" : "cursor-pointer text-neutral-500 hover:text-neutral-400",
             )}
             title="Delete Current View"
             role={appState.currentView === "default" ? "":"button"}
@@ -84,7 +84,7 @@ export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
       <div
         className={`flex ${
           settingsState.sidebarOpen ? 'flex-row' : 'flex-col'
-        } gap-2 pt-4 pb-2 flex-wrap border-t-1 border-neutral-200`}
+        } gap-2 pt-4 pb-2 flex-wrap border-t-1 ${theme.isDark? "border-neutral-200/20" : "border-neutral-200"}`}
       >
         <SavedView isSelected={appState.currentView === 'default'} name="default" />
         {Object.entries(settingsState.savedViews).map(([name]) => (
@@ -157,12 +157,19 @@ interface SavedViewProps {
 
 const SavedView: React.FC<SavedViewProps> = ({ name, isSelected }) => {
   const { appDispatch } = useSharedState();
+
+  const theme = useTheme2();
+
   return (
     <div
       className={clsx(
-        `flex justify-center items-center w-6 h-6 font-mono text-sm rounded-md border cursor-pointer select-none hover:bg-fuchsia-200`,
-        isSelected ? 'bg-fuchsia-300 border-fuchsia-500 font-bold' : 'bg-neutral-300 border-neutral-500'
+        `flex justify-center items-center w-6 h-6 font-mono text-sm rounded-md border cursor-pointer select-none`,
+        isSelected ?
+          theme.isDark ? "bg-fuchsia-700 border-fuchsia-900 font-bold" : 'bg-fuchsia-300 border-fuchsia-500 font-bold'
+        : theme.isDark ? 'bg-neutral-700 border-neutral-500' : 'bg-neutral-300 border-neutral-500',
+        theme.isDark ? "hover:bg-fuchsia-500" : "hover:bg-fuchsia-200",
       )}
+      role="button"
       onClick={() => {
         appDispatch({ type: 'SET_CURRENT_VIEW', payload: name });
       }}

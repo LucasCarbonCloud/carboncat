@@ -23,8 +23,8 @@ export const SaveView: React.FC<SaveViewProps> = () => {
     >
       <div
         className={clsx(
-          'flex flex-col p-4 w-1/3 gap-20 rounded-lg shadow-2xl border-neutral-300 border-1 justify-between',
-          theme.isDark ? 'bg-neutral-800' : 'bg-white'
+          'flex flex-col p-4 w-1/3 gap-20 rounded-lg shadow-2xl border-1 justify-between',
+          theme.isDark ? 'bg-black border-neutral-700' : 'bg-white border-neutral-300'
         )}
       >
         <div className="flex flex-col">

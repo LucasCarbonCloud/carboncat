@@ -22,11 +22,18 @@ export const SqlEditor: React.FC<SqlEditorProps> = () => {
           )}
         >
           <div className={clsx(
-            'p-8 w-1/2 h-3/4 rounded-lg shadow-2xl flex flex-col gap-4 border-1 border-neutral-100',
-            theme.isDark ? 'bg-neutral-600' : 'bg-white text-neutral-600'
+            'p-8 w-1/2 h-3/4 rounded-lg shadow-2xl flex flex-col gap-4 border-1',
+            theme.isDark ? 'bg-black border-neutral-700' : 'bg-white text-neutral-600 border-neutral-100'
           )}>
             <span className="text-3xl font-bold uppercase">SQL Editor</span>
-            <textarea onChange={e => setTextAreaText(e.target.value)} className="block flex-grow !resize-none !font-mono !rounded-lg border-1 border-neutral-200 bg-neutral-50 p-2" spellCheck="false">
+            <textarea
+              onChange={e => setTextAreaText(e.target.value)}
+              className={clsx(
+                "block flex-grow !resize-none !font-mono !rounded-lg border-1 p-2",
+                theme.isDark ? "border-neutral-700 bg-neutral-900" : "border-neutral-200 bg-neutral-50"
+              )}
+              spellCheck="false"
+            >
         {userState.sqlExpression}
             </textarea>
             <div className="flex gap-2 justify-end content-center">
