@@ -1,11 +1,11 @@
 import React from 'react';
 import { FieldSelector } from './Components';
-import { Filter as FilterCmp } from './Filter';
+import { LogFilter } from './LogFilter';
 import { useTheme2 } from '@grafana/ui';
 import clsx from 'clsx';
 import { MenuItemWrapper } from './Menu';
 import { useSharedState } from './StateContext';
-import { faBars, faCog } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faCog, faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useSettings } from './SettingsContext';
 import { motion } from 'framer-motion';
@@ -18,7 +18,7 @@ export interface SideMenuProps {
 export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
   const theme = useTheme2();
 
-  const { userState, userDispatch, appDispatch } = useSharedState();
+  const { userState, userDispatch, appDispatch, appState } = useSharedState();
   const { settingsState, settingsDispatch } = useSettings();
 
   const handleLabelChange = (value: string) => {
@@ -32,15 +32,12 @@ export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
   return (
     <div
       className={clsx(
-        'max-h-full overflow-y-scroll flex flex-col border-1 rounded-lg p-3',
+        'max-h-full max-w-80 overflow-y-scroll flex flex-col border-1 rounded-lg p-3',
         theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200 bg-white'
       )}
     >
       <div
-        className={clsx(
-          "flex justify-between gap-4 pb-4",
-          settingsState.sidebarOpen ? "flex-row-reverse" : "flex-col"
-        )}
+        className={clsx('flex justify-between gap-4 pb-4', settingsState.sidebarOpen ? 'flex-row-reverse' : 'flex-col')}
       >
         <FontAwesomeIcon
           icon={faBars}
@@ -51,26 +48,56 @@ export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
             settingsDispatch({ type: 'TOGGLE_SIDEBAR' });
           }}
         />
-        <FontAwesomeIcon
-          icon={faCog}
-          className="cursor-pointer text-neutral-500 hover:text-neutral-400"
-          title="Settings"
-          role="button"
-          onClick={() => {appDispatch({type: 'OPEN_SETTINGS'})}}
-        />
+        <div
+          className={clsx('flex justify-between gap-4', settingsState.sidebarOpen ? 'flex-row' : 'flex-col')}
+        >
+          <FontAwesomeIcon
+            icon={faCog}
+            className="cursor-pointer text-neutral-500 hover:text-neutral-400"
+            title="Settings"
+            role="button"
+            onClick={() => {
+              appDispatch({ type: 'OPEN_SETTINGS' });
+            }}
+          />
+          <FontAwesomeIcon
+            icon={faTrashCan}
+            className={clsx(
+              appState.currentView === "default" ? "cursor-not-allowed text-neutral-200" : "cursor-pointer text-neutral-500 hover:text-neutral-400",
+            )}
+            title="Delete Current View"
+            role={appState.currentView === "default" ? "":"button"}
+            onClick={() => {
+              if (appState.currentView === "default") {
+                return
+              }
+
+              const v = appState.currentView
+              settingsDispatch({ type: 'DELETE_VIEW', payload: appState.currentView });
+              appDispatch({ type:"SET_CURRENT_VIEW", payload:"default" })
+              appDispatch({ type:"SET_NOTIFICATION", payload:{ icon:faTrashCan, message: `Deleted view ${v}` } })
+            }}
+          />
+        </div>
       </div>
+
+      <div
+        className={`flex ${
+          settingsState.sidebarOpen ? 'flex-row' : 'flex-col'
+        } gap-2 pt-4 pb-2 flex-wrap border-t-1 border-neutral-200`}
+      >
+        <SavedView isSelected={appState.currentView === 'default'} name="default" />
+        {Object.entries(settingsState.savedViews).map(([name]) => (
+          <SavedView isSelected={appState.currentView === name} name={name} />
+        ))}
+      </div>
+
       {settingsState.sidebarOpen && (
         <motion.div initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.3 }}>
-          <FilterCmp
-            field={'logLevel'}
-            selected={userState.logLevels}
-            setFunc={(ll: string[]) => {
-              userDispatch({ type: 'SET_LOGLEVELS', payload: ll });
-            }}
-            options={['DEBUG', 'INFO', 'WARN', 'ERROR', 'FATAL']}
+          <LogFilter
             showName="Log Level"
-            isOpen={true}
           />
+
           <div className={clsx('flex flex-col pt-2', theme.isDark ? 'border-neutral-200/20' : 'border-neutral-200')}>
             <MenuItemWrapper title="Columns" isOpen={true}>
               <p
@@ -119,6 +146,30 @@ export const SideMenu: React.FC<SideMenuProps> = ({ fields, labels }) => {
           </div>
         </motion.div>
       )}
+    </div>
+  );
+};
+
+interface SavedViewProps {
+  name: string;
+  isSelected: boolean;
+}
+
+const SavedView: React.FC<SavedViewProps> = ({ name, isSelected }) => {
+  const { appDispatch } = useSharedState();
+  return (
+    <div
+      className={clsx(
+        `flex justify-center items-center w-6 h-6 font-mono text-sm rounded-md border cursor-pointer select-none hover:bg-fuchsia-200`,
+        isSelected ? 'bg-fuchsia-300 border-fuchsia-500 font-bold' : 'bg-neutral-300 border-neutral-500'
+      )}
+      onClick={() => {
+        appDispatch({ type: 'SET_CURRENT_VIEW', payload: name });
+      }}
+    >
+      <span title={name} className="uppercase">
+        {name[0]}
+      </span>
     </div>
   );
 };
