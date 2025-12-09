@@ -8,7 +8,7 @@ export interface ReleaseMessageProps {}
 export const ReleaseMessage: React.FC<ReleaseMessageProps> = () => {
   const theme = useTheme2();
   const [newReleases, setNewReleases] = useState<string[]>([]);
-  const [lastRead, setLastRead] = useState<string>('notset');
+  const [lastRead, setLastRead] = useState<string>('');
 
   useEffect(() => {
     const lastSeen = localStorage.getItem('carboncat.lastSeenVersion');
@@ -42,8 +42,8 @@ export const ReleaseMessage: React.FC<ReleaseMessageProps> = () => {
         >
           <div
             className={clsx(
-              'flex flex-col p-4 w-1/3 min-h-1/3 rounded-lg shadow-2xl border-neutral-300 border-1 justify-between',
-              theme.isDark ? 'bg-neutral-800' : 'bg-white'
+              'flex flex-col p-4 w-1/3 min-h-1/3 rounded-lg shadow-2xl border-1 justify-between',
+              theme.isDark ? 'bg-neutral-800 border-neutral-600' : 'bg-white border-neutral-300'
             )}
           >
             <div className="flex flex-col">
