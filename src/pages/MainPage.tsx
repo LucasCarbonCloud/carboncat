@@ -30,6 +30,7 @@ import { SideMenu } from 'components/SideMenu';
 import { Settings } from 'components/Settings';
 import { NotificationView } from 'components/NotificationView';
 import { SaveView } from 'components/SaveView';
+import { ReleaseMessage } from 'components/ReleaseMessage';
 
 function PageOne() {
   const theme = useTheme2();
@@ -112,6 +113,7 @@ function PageOne() {
       {appState.saveViewOpen && <SaveView />}
       <NotificationView />
       <SqlEditor />
+      <ReleaseMessage />
 
       <div className="flex gap-12 items-center">
         <Overview fields={appState.logFields} />
