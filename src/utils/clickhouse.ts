@@ -1,7 +1,7 @@
 import { DataFrame, DataQueryRequest, Field, TimeRange } from "@grafana/data";
 import { ClickHouseQuery } from '../types/clickhouse';
 import { getDataSourceSrv } from "@grafana/runtime";
-import { lastValueFrom, isObservable } from 'rxjs';
+import { lastValueFrom, isObservable, Observable } from 'rxjs';
 import { generateFilterString, generateHLFilterString } from "./functions";
 import { Filter } from "types/filters";
 
@@ -39,6 +39,10 @@ export function generateLogQuery(searchTerm: string, filters: Filter[], logLevel
 export async function runLogQuery(dsName: string, timeRange: TimeRange, rawSql: string, setData: (data: Field[]) => void): Promise<void> {
   const fields = await runQuery(rawSql, dsName, timeRange);
   setData(fields);
+}
+
+export function runLogQueryStreaming(dsName: string, timeRange: TimeRange, rawSql: string, setData: (data: Field[], isComplete: boolean) => void, chunkSize = 500): Observable<Field[]> {
+  return runQueryStreaming(rawSql, dsName, timeRange, setData, chunkSize);
 }
 
 
@@ -161,4 +165,129 @@ async function runQuery(rawSql: string, dsName: string, timeRange: TimeRange): P
     console.log(err.message || 'Unknown error');
     throw err;
   }
+}
+
+function runQueryStreaming(rawSql: string, dsName: string, timeRange: TimeRange, onDataUpdate: (fields: Field[], isComplete: boolean) => void, chunkSize = 500): Observable<Field[]> {
+  return new Observable(observer => {
+    let cancelled = false;
+    let offset = 0;
+    let accumulatedFields: Field[] = [];
+
+    const executeChunk = async () => {
+      try {
+        const ds = await getDataSourceSrv().get(dsName);
+        
+        // Replace existing LIMIT clause or add new one with OFFSET (ClickHouse syntax)
+        let chunkedSql = rawSql;
+        
+        // Remove existing LIMIT clause if it exists
+        chunkedSql = chunkedSql.replace(/\s+LIMIT\s+\d+\s*$/i, '');
+        
+        // Add new LIMIT with offset
+        chunkedSql = `${chunkedSql} LIMIT ${offset}, ${chunkSize}`;
+        
+        const request: DataQueryRequest<ClickHouseQuery> = {
+          targets: [
+            {
+              refId: 'A',
+              rawSql: chunkedSql,
+              format: 2,
+            },
+          ],
+          range: timeRange,
+          interval: '1m',
+          intervalMs: 60_000,
+          maxDataPoints: chunkSize,
+          scopedVars: {},
+          timezone: 'browser',
+          app: 'panel-editor',
+          startTime: Date.now(),
+        } as DataQueryRequest<ClickHouseQuery>;
+
+        const queryResult = ds.query(request);
+        const response = isObservable(queryResult) ? await lastValueFrom(queryResult) : await queryResult;
+        
+        // Check for errors
+        if (Array.isArray(response.errors) && response.errors.length > 0) {
+          const errorMessage = response.errors[0]?.message || 'Query failed';
+          throw new Error(errorMessage);
+        }
+        
+        const data = response.data as DataFrame[];
+        
+        if (!data || data.length === 0 || !data[0]?.fields) {
+          // No more data, complete the stream
+          onDataUpdate(accumulatedFields, true);
+          observer.next(accumulatedFields);
+          observer.complete();
+          return;
+        }
+
+        const chunkFields = data[0].fields;
+        const chunkRowCount = chunkFields[0]?.values?.length || 0;
+
+        if (chunkRowCount === 0) {
+          // No rows in this chunk, complete the stream
+          onDataUpdate(accumulatedFields, true);
+          observer.next(accumulatedFields);
+          observer.complete();
+          return;
+        }
+
+        // Merge fields with accumulated data
+        if (accumulatedFields.length === 0) {
+          // First chunk - initialize accumulated fields
+          accumulatedFields = chunkFields.map(field => ({
+            ...field,
+            values: [...field.values]
+          }));
+        } else {
+          // Subsequent chunks - append values to existing fields
+          chunkFields.forEach((field, index) => {
+            if (accumulatedFields[index]) {
+              accumulatedFields[index].values = [
+                ...accumulatedFields[index].values,
+                ...field.values
+              ];
+            }
+          });
+        }
+
+        // Update UI with current accumulated data
+        const isComplete = chunkRowCount < chunkSize;
+        onDataUpdate([...accumulatedFields], isComplete);
+        observer.next([...accumulatedFields]);
+
+        if (cancelled) {
+          observer.complete();
+          return;
+        }
+
+        if (isComplete) {
+          // This was the last chunk
+          observer.complete();
+        } else {
+          // Schedule next chunk with a small delay to prevent overwhelming the UI
+          offset += chunkSize;
+          setTimeout(() => {
+            if (!cancelled) {
+              executeChunk();
+            }
+          }, 10);
+        }
+
+      } catch (err: any) {
+        console.log(err.message || 'Unknown error');
+        observer.error(err);
+      }
+    };
+
+    // Start the first chunk
+    executeChunk();
+
+    // Return cleanup function
+    return () => {
+      cancelled = true;
+    };
+  });
 }

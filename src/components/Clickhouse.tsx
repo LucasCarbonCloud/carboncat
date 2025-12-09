@@ -1,15 +1,24 @@
 import { useEffect, useRef } from "react";
 import { useSharedState } from "./StateContext";
-import { generateLogQuery, runBars, runLogQuery } from "utils/clickhouse";
+import { generateLogQuery, runBars, runLogQuery, runLogQueryStreaming } from "utils/clickhouse";
 import { Field, rangeUtil } from "@grafana/data";
+import { Subscription } from "rxjs";
 
 export function useClickHouse()  {
   const {userState, appState, appDispatch } = useSharedState();
 
   const lastRequestRef = useRef<string | null>(null);
+  const streamingSubscriptionRef = useRef<Subscription | null>(null);
 
   const setLogFields = (f: Field[]) => {
     appDispatch({type:"SET_LOG_FIELDS", payload: f})
+  }
+
+  const setLogFieldsStreaming = (f: Field[], isComplete: boolean) => {
+    appDispatch({type:"SET_LOG_FIELDS", payload: f})
+    if (isComplete) {
+      appDispatch({type:"NOT_LOADING"})
+    }
   }
 
   const setLevelFields = (f: Field[]) => {
@@ -47,6 +56,11 @@ export function useClickHouse()  {
       return
     }
 
+    if (userState.streamingMode) {
+      refreshSqlDataStreaming();
+      return;
+    }
+
     appDispatch({type:"LOADING"})
     Promise.all([
       runLogQuery(
@@ -68,6 +82,60 @@ export function useClickHouse()  {
       .finally(() => {
         appDispatch({type:"NOT_LOADING"})
       });
+  };
+
+  const refreshSqlDataStreaming = (chunkSize = 500) => {
+    if (!appState.sqlExpression) {
+      return
+    }
+
+    // Cancel any existing streaming query
+    if (streamingSubscriptionRef.current) {
+      streamingSubscriptionRef.current.unsubscribe();
+      streamingSubscriptionRef.current = null;
+    }
+
+    appDispatch({type:"LOADING"})
+    
+    const subscription = runLogQueryStreaming(
+      userState.datasource,
+      rangeUtil.convertRawToRange({ from:userState.timeFrom, to:userState.timeTo }),
+      appState.sqlExpression,
+      setLogFieldsStreaming,
+      chunkSize
+    ).subscribe({
+      error: (error: any) => {
+        appDispatch({type:"SET_ERROR", payload: error.message})
+        appDispatch({type:"NOT_LOADING"})
+        streamingSubscriptionRef.current = null;
+      },
+      complete: () => {
+        streamingSubscriptionRef.current = null;
+      }
+    });
+
+    // Store the subscription for potential cancellation
+    streamingSubscriptionRef.current = subscription;
+
+    // Also run bars query in parallel (not streamed)
+    runBars(
+      userState.datasource,
+      rangeUtil.convertRawToRange({ from:userState.timeFrom, to:userState.timeTo }),
+      appState.sqlExpression,
+      setLevelFields
+    ).catch((r: any) => {
+      appDispatch({type:"SET_ERROR", payload: r.message})
+    });
+
+    return subscription;
+  };
+
+  const cancelQuery = () => {
+    if (streamingSubscriptionRef.current) {
+      streamingSubscriptionRef.current.unsubscribe();
+      streamingSubscriptionRef.current = null;
+      appDispatch({type:"NOT_LOADING"});
+    }
   };
 
   useEffect(() => {
@@ -99,5 +167,9 @@ export function useClickHouse()  {
     return () => clearInterval(timer);
   }, [userState.refreshInterval, userState.timeFrom, userState.timeTo, appState.sqlExpression]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  return refreshSqlData
+  return {
+    refreshSqlData,
+    refreshSqlDataStreaming,
+    cancelQuery
+  }
 }
