@@ -17,10 +17,7 @@ export interface SearchbarProps {
   labels: string[];
 }
 
-export const Searchbar: React.FC<SearchbarProps> = ({
-  fields,
-  labels,
-}) => {
+export const Searchbar: React.FC<SearchbarProps> = ({ fields, labels }) => {
   const { userState, userDispatch, appState } = useSharedState();
 
   const [localValue, setLocalValue] = useState(userState.searchTerm);
@@ -58,30 +55,29 @@ export const Searchbar: React.FC<SearchbarProps> = ({
     return vals;
   }, [fields]);
 
-
   useEffect(() => {
-    skipLocalValueEffect.current = true
+    skipLocalValueEffect.current = true;
     const timer = setTimeout(() => {
       const filteredVal = localValue.replace(/#\S*\s?/g, '').trim();
-      userDispatch({type: 'SET_SEARCHTERM', payload: filteredVal})
-      skipLocalValueEffect.current = false
+      userDispatch({ type: 'SET_SEARCHTERM', payload: filteredVal });
+      skipLocalValueEffect.current = false;
     }, 500);
 
     return () => clearTimeout(timer);
   }, [localValue]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (skipLocalValueEffect.current) { return }
-    setLocalValue(userState.searchTerm)
-  }, [userState.searchTerm])
-
-
+    if (skipLocalValueEffect.current) {
+      return;
+    }
+    setLocalValue(userState.searchTerm);
+  }, [userState.searchTerm]);
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Backspace' && localValue === '') {
       if (toDeleteFilterIdx > -1) {
         const f = userState.filters[toDeleteFilterIdx];
-        userDispatch({type:"FILTER_RM", payload: f});
+        userDispatch({ type: 'FILTER_RM', payload: f });
         setToDeleteFilterIdx(-1);
       } else {
         setToDeleteFilterIdx(userState.filters.length - 1);
@@ -112,10 +108,10 @@ export const Searchbar: React.FC<SearchbarProps> = ({
     fullRegex.lastIndex = 0;
     const match = fullRegex.exec(localValue);
     if (match != null && filteredValues[selectedIdx] !== undefined) {
-      const newLocalValue = localValue.replace('#' + match[1], '#' + filteredValues[selectedIdx])
+      const newLocalValue = localValue.replace('#' + match[1], '#' + filteredValues[selectedIdx]);
       if (localValue === newLocalValue) {
-        setLocalValue(newLocalValue + "# ");
-        valueChange(newLocalValue + "#")
+        setLocalValue(newLocalValue + '# ');
+        valueChange(newLocalValue + '#');
       } else {
         setLocalValue(newLocalValue);
       }
@@ -130,7 +126,10 @@ export const Searchbar: React.FC<SearchbarProps> = ({
       const match = tokenRegex.exec(v);
       st = st.replaceAll(v, '');
       if (match != null) {
-        userDispatch({type:"FILTER_ADD", payload: {key: match[1], operation: match[2] as FilterOperation, value:match[3]}});
+        userDispatch({
+          type: 'FILTER_ADD',
+          payload: { key: match[1], operation: match[2] as FilterOperation, value: match[3] },
+        });
       }
     });
 
@@ -175,19 +174,21 @@ export const Searchbar: React.FC<SearchbarProps> = ({
         theme.isDark ? 'border-neutral-200/20 bg-neutral-200/20' : 'border-neutral-200 bg-neutral-200'
       )}
     >
+      <div className={clsx('flex px-4 rounded-l-lg ')}>
+        <FontAwesomeIcon icon={faMagnifyingGlass} />
+      </div>
       <div
         className={clsx(
-          'flex px-4 rounded-l-lg ',
+          `relative w-full flex items-center rounded-r-lg`,
+          userState.mode === 'sql'
+            ? theme.isDark
+              ? 'bg-neutral-500'
+              : 'bg-gray-100'
+            : theme.isDark
+            ? 'bg-neutral-900'
+            : 'bg-white'
         )}
       >
-          <FontAwesomeIcon icon={faMagnifyingGlass} />
-      </div>
-    <div className={clsx(
-      `relative w-full flex items-center rounded-r-lg`,
-      userState.mode === "sql" ?
-        theme.isDark ? 'bg-neutral-500' : "bg-gray-100" :
-        theme.isDark ? 'bg-neutral-900' : 'bg-white',
-    )}>
         {userState.filters.length > 0 && (
           <div className={clsx(`text-xs pl-2 flex gap-1 font-bold`)}>
             {userState.filters.map((f: Filter, idx: number) => (
@@ -208,7 +209,7 @@ export const Searchbar: React.FC<SearchbarProps> = ({
                   role="button"
                   onClick={() => {
                     setToDeleteFilterIdx(-1);
-                    userDispatch({type:"FILTER_RM", payload: f});
+                    userDispatch({ type: 'FILTER_RM', payload: f });
                   }}
                 />
               </div>
@@ -218,19 +219,19 @@ export const Searchbar: React.FC<SearchbarProps> = ({
 
         <input
           className="flex-grow p-3 rounded-lg outline-none"
-          style={{ borderTopRightRadius: '0.5rem', borderBottomRightRadius: '0.5rem', background: "none" }}
+          style={{ borderTopRightRadius: '0.5rem', borderBottomRightRadius: '0.5rem', background: 'none' }}
           type="text"
           placeholder="Filter your logs. Add filters with #key[!=/=/~]value#. Free text search the message."
           value={localValue}
           onChange={(e) => valueChange(e.target.value)}
           onKeyDown={(e) => onKeyDown(e)}
-          disabled={userState.mode === "sql" }
+          disabled={userState.mode === 'sql'}
         />
         {filteredValues.length > 0 && (
           <div
             className={clsx(
               `absolute left-0 top-full z-50 flex flex-col p-2 rounded-md border-1 shadow-lg cursor-pointer`,
-               theme.isDark ? 'bg-neutral-800 border-neutral-600' : 'bg-neutral-50 border-neutral-200'
+              theme.isDark ? 'bg-neutral-800 border-neutral-600' : 'bg-neutral-50 border-neutral-200'
             )}
           >
             {filteredValues.map((v: string, idx: number) => (
@@ -245,32 +246,39 @@ export const Searchbar: React.FC<SearchbarProps> = ({
             ))}
           </div>
         )}
-      <div className="pr-3">
-        {userState.mode === "sql"  &&
+        <div className="flex items-center pr-3">
+          {appState.isLoading && userState.streamingMode && (
+            <div className="mr-2 w-6 h-6 rounded-full animate-spin border-3 border-[#28A0A6] border-t-transparent"></div>
+          )}
+          {userState.mode === 'sql' && (
             <FontAwesomeIcon
-              title={"Open SQL Editor"}
+              title={'Open SQL Editor'}
               icon={faPenToSquare}
               role="button"
               className={`text-lg cursor-pointer hover:text-neutral-300 pr-2`}
-              onClick={() => {userDispatch({type:"OPEN_SQL_EDITOR"})}}
+              onClick={() => {
+                userDispatch({ type: 'OPEN_SQL_EDITOR' });
+              }}
             />
-        }
-        <FontAwesomeIcon
-          title={userState.mode === "sql"  ? 'Exit SQL-Mode' : "Enter SQL-Mode"}
-          icon={faCode}
-          role="button"
-          className={`text-lg cursor-pointer hover:text-neutral-300 ${userState.mode === "sql"  ? "text-fuchsia-600 drop-shadow drop-shadow-fuchsia-600/80" : ""}`}
-          onClick={() => {
-            if (userState.mode !== "sql" ) {
-              userDispatch({type: 'SET_SQL', payload:appState.sqlExpression})
-              userDispatch({type:"OPEN_SQL_EDITOR"})
-            } else {
-              userDispatch({type: 'CLEAR_SQL' })
-            }
-            userDispatch({type:"SQLMODE", payload:userState.mode !== "sql" });
-          }}
-        />
-      </div>
+          )}
+          <FontAwesomeIcon
+            title={userState.mode === 'sql' ? 'Exit SQL-Mode' : 'Enter SQL-Mode'}
+            icon={faCode}
+            role="button"
+            className={`text-lg cursor-pointer hover:text-neutral-300 ${
+              userState.mode === 'sql' ? 'text-fuchsia-600 drop-shadow drop-shadow-fuchsia-600/80' : ''
+            }`}
+            onClick={() => {
+              if (userState.mode !== 'sql') {
+                userDispatch({ type: 'SET_SQL', payload: appState.sqlExpression });
+                userDispatch({ type: 'OPEN_SQL_EDITOR' });
+              } else {
+                userDispatch({ type: 'CLEAR_SQL' });
+              }
+              userDispatch({ type: 'SQLMODE', payload: userState.mode !== 'sql' });
+            }}
+          />
+        </div>
       </div>
     </div>
   );
